@@ -26,6 +26,7 @@ import {
 } from '../interfaces/http-adapter.interface';
 import { McpOptions } from '../interfaces';
 import { McpExecutorService } from '../services/mcp-executor.service';
+import { ApiTags } from '@nestjs/swagger';
 import { McpRegistryService } from '../services/mcp-registry.service';
 import { buildMcpCapabilities } from '../utils/capabilities-builder';
 import { normalizeEndpoint } from '../utils/normalize-endpoint';
@@ -39,6 +40,7 @@ export function createStreamableHttpController(
   guards: Type<CanActivate>[] = [],
   decorators: ClassDecorator[] = [],
 ) {
+  @ApiTags('mcp')
   @Controller()
   @applyDecorators(...decorators)
   class StreamableHttpController {

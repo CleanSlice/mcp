@@ -10,7 +10,7 @@ MCP (Model Context Protocol) server that gives AI coding agents access to the Cl
 Run this command. See [Claude Code MCP docs](https://docs.anthropic.com/en/docs/claude-code/mcp) for more info.
 
 ```sh
-claude mcp add --scope user --transport sse cleanslice https://mcp.cleanslice.org/mcp/sse
+claude mcp add --scope user --transport http cleanslice https://mcp.cleanslice.org/mcp
 ```
 
 > Remove `--scope user` to install for the current project only.
@@ -28,7 +28,8 @@ Paste the following into your Cursor `~/.cursor/mcp.json` file. You may also ins
 {
   "mcpServers": {
     "cleanslice": {
-      "url": "https://mcp.cleanslice.org/mcp/sse"
+      "type": "streamable-http",
+      "url": "https://mcp.cleanslice.org/mcp"
     }
   }
 }
@@ -45,7 +46,8 @@ Add to your Windsurf MCP config file. See [Windsurf MCP docs](https://docs.winds
 {
   "mcpServers": {
     "cleanslice": {
-      "serverUrl": "https://mcp.cleanslice.org/mcp/sse"
+      "type": "streamable-http",
+      "serverUrl": "https://mcp.cleanslice.org/mcp"
     }
   }
 }
@@ -62,7 +64,8 @@ Add to `.vscode/mcp.json` in your project. See [VS Code MCP docs](https://code.v
 {
   "servers": {
     "cleanslice": {
-      "url": "https://mcp.cleanslice.org/mcp/sse"
+      "type": "streamable-http",
+      "url": "https://mcp.cleanslice.org/mcp"
     }
   }
 }
@@ -79,7 +82,8 @@ Add to your `claude_desktop_config.json`. See [Claude Desktop MCP docs](https://
 {
   "mcpServers": {
     "cleanslice": {
-      "url": "https://mcp.cleanslice.org/mcp/sse"
+      "type": "streamable-http",
+      "url": "https://mcp.cleanslice.org/mcp"
     }
   }
 }
@@ -97,7 +101,7 @@ Add this to your Opencode configuration file. See [Opencode MCP docs](https://op
   "mcp": {
     "cleanslice": {
       "type": "remote",
-      "url": "https://mcp.cleanslice.org/mcp/sse",
+      "url": "https://mcp.cleanslice.org/mcp",
       "enabled": true
     }
   }
@@ -116,7 +120,7 @@ npm install
 npm run dev
 ```
 
-Then point your MCP client to `http://localhost:8080/mcp/sse`.
+Then point your MCP client to `http://localhost:8080/mcp`.
 
 </details>
 

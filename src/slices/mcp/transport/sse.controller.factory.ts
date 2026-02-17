@@ -25,6 +25,7 @@ import { Buffer } from "node:buffer";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { McpOptions } from "../interfaces";
+import { ApiTags } from "@nestjs/swagger";
 import { McpRegistryService } from "../services/mcp-registry.service";
 import { McpExecutorService } from "../services/mcp-executor.service";
 import { SsePingService } from "../services/sse-ping.service";
@@ -39,6 +40,7 @@ export function createSseController(
   guards: Type<CanActivate>[] = [],
   decorators: ClassDecorator[] = []
 ) {
+  @ApiTags('mcp')
   @Controller({
     version: VERSION_NEUTRAL,
   })

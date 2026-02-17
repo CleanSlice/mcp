@@ -27,6 +27,7 @@ async function bootstrap() {
     .setTitle("CleanSlice MCP Server")
     .setVersion("1.0")
     .addTag("api")
+    .addTag("mcp")
     .addServer("/")
     .build();
   const document = SwaggerModule.createDocument(app, config);
