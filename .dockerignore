@@ -1,0 +1,23 @@
+node_modules
+npm-debug.log
+dist
+.git
+.gitignore
+README.md
+.env
+coverage
+.nyc_output
+.idea
+.vscode
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Claude Desktop config files (local dev only)
+claude-*.json
+mcp-*.js
+
+# Documentation files (not the docs folder)
+CLAUDE_DESKTOP_SETUP.md
+# Note: docs/ folder should NOT be ignored - it's needed for runtime
