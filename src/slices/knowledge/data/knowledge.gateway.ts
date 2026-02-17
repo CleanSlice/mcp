@@ -4,7 +4,7 @@
 // @type:gateway
 
 import { Injectable } from '@nestjs/common';
-import { IKnowledgeGateway, IDocumentSearchQuery } from '../domain/knowledge.gateway';
+import { IKnowledgeGateway, IDocumentSearchQuery, IPaginatedSearchResult } from '../domain/knowledge.gateway';
 import { DocsRepository } from './repositories/docs/docs.repository';
 import { GitHubRepository } from './repositories/github/github.repository';
 import type { IDocumentSearchResult } from './repositories/docs/docs.repository';
@@ -25,13 +25,14 @@ export class KnowledgeGateway implements IKnowledgeGateway {
 
   async getGettingStarted(): Promise<IFrameworkArchitectureData> {
     // First, try to find the rules document specifically
-    const rulesResults = await this.search({
+    const rulesSearch = await this.search({
       query: 'get-started',
       category: 'quickstart',
+      limit: 10,
     });
 
     // Find the rules document
-    const rulesDoc = rulesResults.find(
+    const rulesDoc = rulesSearch.results.find(
       (r) => r.path.includes('rules') || r.name.toLowerCase().includes('rules')
     );
 
@@ -47,15 +48,19 @@ export class KnowledgeGateway implements IKnowledgeGateway {
     }
 
     // Fallback to general quickstart search
-    const results = await this.search({
+    const fallback = await this.search({
       phase: 'initialization',
       category: 'quickstart',
+      limit: 10,
     });
 
-    return this.transformToFrameworkArchitecture(results, 'CleanSlice Architecture');
+    return this.transformToFrameworkArchitecture(fallback.results, 'CleanSlice Architecture');
   }
 
-  async search(query: IDocumentSearchQuery): Promise<IDocumentSearchResult[]> {
+  async search(query: IDocumentSearchQuery): Promise<IPaginatedSearchResult> {
+    const limit = query.limit ?? 5;
+    const offset = query.offset ?? 0;
+
     // Search both sources in parallel
     const [localResults, githubResults] = await Promise.all([
       Promise.resolve(this.docsRepository.search(query)),
@@ -65,8 +70,15 @@ export class KnowledgeGateway implements IKnowledgeGateway {
       }),
     ]);
 
-    // Merge results, preferring local when duplicates exist
-    return this.mergeResults(localResults, githubResults);
+    // Merge results, preferring local when duplicates exist (sorted by relevance)
+    const merged = this.mergeResults(localResults, githubResults);
+
+    return {
+      results: merged.slice(offset, offset + limit),
+      total: merged.length,
+      limit,
+      offset,
+    };
   }
 
   async getCategories(): Promise<string[]> {

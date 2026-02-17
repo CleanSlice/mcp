@@ -104,9 +104,21 @@ export class KnowledgeTool {
         .array(z.string())
         .optional()
         .describe('Array of tags to filter by'),
+      limit: z
+        .number()
+        .int()
+        .positive()
+        .optional()
+        .describe('Max results to return (default: 5)'),
+      offset: z
+        .number()
+        .int()
+        .nonnegative()
+        .optional()
+        .describe('Number of results to skip for pagination (default: 0)'),
     }),
   })
-  async search({ query, framework, sliceName, phase, feature, workingOn, category, tags }) {
+  async search({ query, framework, sliceName, phase, feature, workingOn, category, tags, limit, offset }) {
     console.log('\n🎯 [MCP Request] search');
     console.log('   Tool: search');
     console.log('   Parameters:');
@@ -118,8 +130,10 @@ export class KnowledgeTool {
     if (workingOn) console.log(`     - workingOn: ${workingOn}`);
     if (category) console.log(`     - category: ${category}`);
     if (tags) console.log(`     - tags: ${tags.join(', ')}`);
+    if (limit) console.log(`     - limit: ${limit}`);
+    if (offset) console.log(`     - offset: ${offset}`);
 
-    const results = await this.knowledgeService.search({
+    const { results, total, limit: appliedLimit, offset: appliedOffset } = await this.knowledgeService.search({
       query,
       framework,
       sliceName,
@@ -128,11 +142,13 @@ export class KnowledgeTool {
       workingOn,
       category,
       tags,
+      limit,
+      offset,
     });
 
-    const dto = new SearchResultsResponseDto(results);
+    const dto = new SearchResultsResponseDto(results, { total, limit: appliedLimit, offset: appliedOffset });
 
-    console.log(`   ✅ Response: Returned ${results.length} document(s)`);
+    console.log(`   ✅ Response: Returned ${results.length} of ${total} document(s) (offset: ${appliedOffset})`);
     return dto.toMcpResponse();
   }
 }

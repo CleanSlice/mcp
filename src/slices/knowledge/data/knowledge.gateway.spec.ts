@@ -90,21 +90,22 @@ describe('KnowledgeGateway', () => {
 
   describe('search', () => {
     it('should search both local and GitHub repositories', async () => {
-      const results = await gateway.search({ query: 'test' });
+      await gateway.search({ query: 'test', limit: 100 });
 
-      expect(docsRepository.search).toHaveBeenCalledWith({ query: 'test' });
-      expect(githubRepository.search).toHaveBeenCalledWith({ query: 'test' });
+      expect(docsRepository.search).toHaveBeenCalledWith(expect.objectContaining({ query: 'test' }));
+      expect(githubRepository.search).toHaveBeenCalledWith(expect.objectContaining({ query: 'test' }));
     });
 
     it('should merge results from both sources', async () => {
-      const results = await gateway.search({ query: 'test' });
+      const { results, total } = await gateway.search({ query: 'test', limit: 100 });
 
       // Should have 3 unique results (rules.md deduplicated)
+      expect(total).toBe(3);
       expect(results.length).toBe(3);
     });
 
     it('should prefer local results over GitHub duplicates', async () => {
-      const results = await gateway.search({ query: 'rules' });
+      const { results } = await gateway.search({ query: 'rules', limit: 100 });
 
       // Find the rules document
       const rulesDoc = results.find((r) => r.path.includes('rules'));
@@ -115,7 +116,7 @@ describe('KnowledgeGateway', () => {
     });
 
     it('should sort merged results by relevance score', async () => {
-      const results = await gateway.search({ query: 'test' });
+      const { results } = await gateway.search({ query: 'test', limit: 100 });
 
       // Verify descending order
       for (let i = 0; i < results.length - 1; i++) {
@@ -128,20 +129,40 @@ describe('KnowledgeGateway', () => {
     it('should handle GitHub failure gracefully', async () => {
       githubRepository.search.mockRejectedValue(new Error('Network error'));
 
-      const results = await gateway.search({ query: 'test' });
+      const { results, total } = await gateway.search({ query: 'test', limit: 100 });
 
       // Should return only local results
-      expect(results.length).toBe(mockLocalDocs.length);
+      expect(total).toBe(mockLocalDocs.length);
       expect(results[0].path).toBe('00-quickstart/rules.md');
     });
 
     it('should include GitHub-only documents', async () => {
-      const results = await gateway.search({ query: 'test' });
+      const { results } = await gateway.search({ query: 'test', limit: 100 });
 
       // Gateway pattern only exists in GitHub
       const gatewayDoc = results.find((r) => r.name === 'Gateway Pattern');
       expect(gatewayDoc).toBeDefined();
       expect(gatewayDoc?.path).toBe('02-patterns/gateway-pattern.md');
+    });
+
+    it('should paginate results with limit and offset', async () => {
+      const page1 = await gateway.search({ query: 'test', limit: 2, offset: 0 });
+      const page2 = await gateway.search({ query: 'test', limit: 2, offset: 2 });
+
+      expect(page1.results.length).toBe(2);
+      expect(page1.total).toBe(3);
+      expect(page1.offset).toBe(0);
+
+      expect(page2.results.length).toBe(1);
+      expect(page2.total).toBe(3);
+      expect(page2.offset).toBe(2);
+    });
+
+    it('should default to limit 5 and offset 0', async () => {
+      const { limit, offset } = await gateway.search({ query: 'test' });
+
+      expect(limit).toBe(5);
+      expect(offset).toBe(0);
     });
   });
 
@@ -242,7 +263,7 @@ describe('KnowledgeGateway', () => {
         },
       ]);
 
-      const results = await gateway.search({ query: 'rules' });
+      const { results } = await gateway.search({ query: 'rules', limit: 100 });
 
       // Should only have one rules.md
       expect(results.length).toBe(1);
@@ -269,7 +290,7 @@ describe('KnowledgeGateway', () => {
         },
       ]);
 
-      const results = await gateway.search({ query: 'setup' });
+      const { results } = await gateway.search({ query: 'setup', limit: 100 });
 
       expect(results.length).toBe(2);
     });

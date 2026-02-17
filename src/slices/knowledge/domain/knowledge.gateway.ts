@@ -18,6 +18,18 @@ export interface IDocumentSearchQuery {
   workingOn?: 'api' | 'app' | 'admin' | 'full-stack';
   category?: string;
   tags?: string[];
+  limit?: number;
+  offset?: number;
+}
+
+/**
+ * Paginated search result
+ */
+export interface IPaginatedSearchResult {
+  results: IDocumentSearchResult[];
+  total: number;
+  limit: number;
+  offset: number;
 }
 
 /**
@@ -29,7 +41,7 @@ export interface IDocumentSearchQuery {
 export interface IKnowledgeGateway {
   getGettingStarted(): Promise<IFrameworkArchitectureData>;
 
-  search(query: IDocumentSearchQuery): Promise<IDocumentSearchResult[]>;
+  search(query: IDocumentSearchQuery): Promise<IPaginatedSearchResult>;
 
   getCategories(): Promise<string[]>;
 }

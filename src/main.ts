@@ -43,7 +43,7 @@ async function bootstrap() {
   });
 
   if (process.env.NODE_ENV === "dev") {
-    fs.writeFileSync("../swagger-spec.json", JSON.stringify(document));
+    fs.writeFileSync("./swagger-spec.json", JSON.stringify(document));
   }
 
   const port = process.env.PORT ?? 8080;

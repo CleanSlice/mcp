@@ -161,33 +161,47 @@ export class FrameworkArchitectureResponseDto extends BaseMcpResponseDto {
   }
 }
 
+interface IPaginationMeta {
+  total: number;
+  limit: number;
+  offset: number;
+}
+
 /**
  * Search results response DTO
  */
 export class SearchResultsResponseDto extends BaseMcpResponseDto {
-  constructor(private readonly results: Array<{
-    name: string;
-    path: string;
-    content: string;
-    description?: string;
-    category?: string;
-    tags?: string[];
-    relevanceScore?: number;
-  }>) {
+  constructor(
+    private readonly results: Array<{
+      name: string;
+      path: string;
+      content: string;
+      description?: string;
+      category?: string;
+      tags?: string[];
+      relevanceScore?: number;
+    }>,
+    private readonly pagination: IPaginationMeta,
+  ) {
     super();
   }
 
   toMarkdown(): string {
+    const { total, limit, offset } = this.pagination;
+
     if (this.results.length === 0) {
       return '# Search Results\n\nNo documents found matching your query.';
     }
 
-    let content = `# Search Results\n\nFound ${this.results.length} document(s):\n\n`;
+    const from = offset + 1;
+    const to = offset + this.results.length;
+
+    let content = `# Search Results\n\nShowing ${from}–${to} of ${total} documents (sorted by relevance):\n\n`;
     content += '---\n\n';
 
     this.results.forEach((doc, index) => {
-      content += `## ${index + 1}. ${doc.name}\n\n`;
-      
+      content += `## ${offset + index + 1}. ${doc.name}\n\n`;
+
       if (doc.description) {
         content += `*${doc.description}*\n\n`;
       }
@@ -211,6 +225,10 @@ export class SearchResultsResponseDto extends BaseMcpResponseDto {
       content += doc.content;
       content += '\n\n---\n\n';
     });
+
+    if (to < total) {
+      content += `> **More results available.** Use \`offset: ${to}\` to see the next page (${total - to} remaining).\n`;
+    }
 
     return content;
   }

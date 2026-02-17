@@ -19,6 +19,8 @@ export interface IDocumentSearchQuery {
   workingOn?: 'api' | 'app' | 'admin' | 'full-stack';
   category?: string;
   tags?: string[];
+  limit?: number;
+  offset?: number;
 }
 
 /**

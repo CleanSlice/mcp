@@ -5,6 +5,19 @@ MCP (Model Context Protocol) server that gives AI coding agents access to the Cl
 ## Installation
 
 <details>
+<summary><b>Install in Claude Code</b></summary>
+
+Run this command. See [Claude Code MCP docs](https://docs.anthropic.com/en/docs/claude-code/mcp) for more info.
+
+```sh
+claude mcp add --scope user --transport sse cleanslice https://mcp.cleanslice.org/mcp/sse
+```
+
+> Remove `--scope user` to install for the current project only.
+
+</details>
+
+<details>
 <summary><b>Install in Cursor</b></summary>
 
 Go to: `Settings` -> `Cursor Settings` -> `MCP` -> `Add new global MCP server`
@@ -71,19 +84,6 @@ Add to your `claude_desktop_config.json`. See [Claude Desktop MCP docs](https://
   }
 }
 ```
-
-</details>
-
-<details>
-<summary><b>Install in Claude Code</b></summary>
-
-Run this command. See [Claude Code MCP docs](https://docs.anthropic.com/en/docs/claude-code/mcp) for more info.
-
-```sh
-claude mcp add --scope user --transport sse cleanslice https://mcp.cleanslice.org/mcp/sse
-```
-
-> Remove `--scope user` to install for the current project only.
 
 </details>
 

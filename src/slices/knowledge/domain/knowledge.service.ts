@@ -4,9 +4,8 @@
 // @type:service
 
 import { Injectable, Inject } from '@nestjs/common';
-import { IKnowledgeGateway, IDocumentSearchQuery } from './knowledge.gateway';
+import { IKnowledgeGateway, IDocumentSearchQuery, IPaginatedSearchResult } from './knowledge.gateway';
 import { IFrameworkArchitectureData } from './knowledge.types';
-import type { IDocumentSearchResult } from '../data/repositories/docs/docs.repository';
 
 /**
  * Knowledge service
@@ -25,7 +24,7 @@ export class KnowledgeService {
     return this.knowledgeGateway.getGettingStarted();
   }
 
-  async search(query: IDocumentSearchQuery): Promise<IDocumentSearchResult[]> {
+  async search(query: IDocumentSearchQuery): Promise<IPaginatedSearchResult> {
     return this.knowledgeGateway.search(query);
   }
 
