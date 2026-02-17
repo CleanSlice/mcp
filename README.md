@@ -1,5 +1,7 @@
 # CleanSlice MCP Server
 
+[![Install MCP Server](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=cleanslice&config=eyJ1cmwiOiJodHRwczovL21jcC5jbGVhbnNsaWNlLm9yZy9tY3AifQ%3D%3D)
+
 MCP (Model Context Protocol) server that gives AI coding agents access to the CleanSlice architecture documentation. Connect it to Claude, Cursor, Windsurf, or any MCP-compatible client so the AI knows how to build apps using CleanSlice conventions.
 
 ## Installation
@@ -28,7 +30,7 @@ Paste the following into your Cursor `~/.cursor/mcp.json` file. You may also ins
 {
   "mcpServers": {
     "cleanslice": {
-      "type": "streamable-http",
+      "type": "http",
       "url": "https://mcp.cleanslice.org/mcp"
     }
   }
@@ -46,7 +48,7 @@ Add to your Windsurf MCP config file. See [Windsurf MCP docs](https://docs.winds
 {
   "mcpServers": {
     "cleanslice": {
-      "type": "streamable-http",
+      "type": "http",
       "serverUrl": "https://mcp.cleanslice.org/mcp"
     }
   }
@@ -64,7 +66,7 @@ Add to `.vscode/mcp.json` in your project. See [VS Code MCP docs](https://code.v
 {
   "servers": {
     "cleanslice": {
-      "type": "streamable-http",
+      "type": "http",
       "url": "https://mcp.cleanslice.org/mcp"
     }
   }
@@ -82,7 +84,7 @@ Add to your `claude_desktop_config.json`. See [Claude Desktop MCP docs](https://
 {
   "mcpServers": {
     "cleanslice": {
-      "type": "streamable-http",
+      "type": "http",
       "url": "https://mcp.cleanslice.org/mcp"
     }
   }
