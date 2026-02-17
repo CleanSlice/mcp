@@ -1,0 +1,28 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.CleanSlice/mcp",
+  "title": "CleanSlice",
+  "description": "Architecture docs and patterns for NestJS + Nuxt full-stack apps",
+  "repository": {
+    "url": "https://github.com/CleanSlice/mcp",
+    "source": "github"
+  },
+  "websiteUrl": "https://cleanslice.dev",
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "cleanslice-mcp-server",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.cleanslice.org/mcp"
+    }
+  ]
+}
