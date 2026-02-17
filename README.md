@@ -4,9 +4,12 @@ MCP (Model Context Protocol) server that gives AI coding agents access to the Cl
 
 ## Installation
 
-### Cursor
+<details>
+<summary><b>Install in Cursor</b></summary>
 
-Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project-level):
+Go to: `Settings` -> `Cursor Settings` -> `MCP` -> `Add new global MCP server`
+
+Paste the following into your Cursor `~/.cursor/mcp.json` file. You may also install in a specific project by creating `.cursor/mcp.json` in your project folder. See [Cursor MCP docs](https://docs.cursor.com/context/model-context-protocol) for more info.
 
 ```json
 {
@@ -18,9 +21,12 @@ Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project-level):
 }
 ```
 
-### Windsurf
+</details>
 
-Add to your Windsurf MCP config:
+<details>
+<summary><b>Install in Windsurf</b></summary>
+
+Add to your Windsurf MCP config file. See [Windsurf MCP docs](https://docs.windsurf.com/windsurf/mcp) for more info.
 
 ```json
 {
@@ -32,9 +38,12 @@ Add to your Windsurf MCP config:
 }
 ```
 
-### VS Code (Copilot)
+</details>
 
-Add to `.vscode/mcp.json` in your project:
+<details>
+<summary><b>Install in VS Code (Copilot)</b></summary>
+
+Add to `.vscode/mcp.json` in your project. See [VS Code MCP docs](https://code.visualstudio.com/docs/copilot/chat/mcp-servers) for more info.
 
 ```json
 {
@@ -46,9 +55,12 @@ Add to `.vscode/mcp.json` in your project:
 }
 ```
 
-### Claude Desktop
+</details>
 
-Add to your `claude_desktop_config.json`:
+<details>
+<summary><b>Install in Claude Desktop</b></summary>
+
+Add to your `claude_desktop_config.json`. See [Claude Desktop MCP docs](https://modelcontextprotocol.io/quickstart/user) for more info.
 
 ```json
 {
@@ -60,13 +72,42 @@ Add to your `claude_desktop_config.json`:
 }
 ```
 
-### Claude Code
+</details>
 
-```bash
-claude mcp add cleanslice --transport sse https://mcp.cleanslice.org/mcp/sse
+<details>
+<summary><b>Install in Claude Code</b></summary>
+
+Run this command. See [Claude Code MCP docs](https://docs.anthropic.com/en/docs/claude-code/mcp) for more info.
+
+```sh
+claude mcp add --scope user --transport sse cleanslice https://mcp.cleanslice.org/mcp/sse
 ```
 
-### Run Locally
+> Remove `--scope user` to install for the current project only.
+
+</details>
+
+<details>
+<summary><b>Install in Opencode</b></summary>
+
+Add this to your Opencode configuration file. See [Opencode MCP docs](https://opencode.ai/docs/mcp-servers) for more info.
+
+```json
+{
+  "mcp": {
+    "cleanslice": {
+      "type": "remote",
+      "url": "https://mcp.cleanslice.org/mcp/sse",
+      "enabled": true
+    }
+  }
+}
+```
+
+</details>
+
+<details>
+<summary><b>Run Locally</b></summary>
 
 ```bash
 git clone https://github.com/CleanSlice/mcp.git
@@ -76,6 +117,8 @@ npm run dev
 ```
 
 Then point your MCP client to `http://localhost:8080/mcp/sse`.
+
+</details>
 
 ## Available Tools
 
