@@ -1,24 +1,72 @@
 # CleanSlice MCP Server
 
-MCP (Model Context Protocol) server that gives AI coding agents access to the CleanSlice architecture documentation. Connect it to Claude, Cursor, or any MCP-compatible client so the AI knows how to build apps using CleanSlice conventions.
+MCP (Model Context Protocol) server that gives AI coding agents access to the CleanSlice architecture documentation. Connect it to Claude, Cursor, Windsurf, or any MCP-compatible client so the AI knows how to build apps using CleanSlice conventions.
 
-## How to Install
+## Installation
 
-### 1. Add to your AI client
+### Cursor
 
-Add this to your MCP client config (e.g. Claude Desktop `claude_desktop_config.json`):
+Add to `~/.cursor/mcp.json` (global) or `.cursor/mcp.json` (project-level):
 
 ```json
 {
   "mcpServers": {
     "cleanslice": {
-      "url": "https://your-server-url/mcp/sse"
+      "url": "https://mcp.cleanslice.org/mcp/sse"
     }
   }
 }
 ```
 
-### 2. Or run locally
+### Windsurf
+
+Add to your Windsurf MCP config:
+
+```json
+{
+  "mcpServers": {
+    "cleanslice": {
+      "serverUrl": "https://mcp.cleanslice.org/mcp/sse"
+    }
+  }
+}
+```
+
+### VS Code (Copilot)
+
+Add to `.vscode/mcp.json` in your project:
+
+```json
+{
+  "servers": {
+    "cleanslice": {
+      "url": "https://mcp.cleanslice.org/mcp/sse"
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "cleanslice": {
+      "url": "https://mcp.cleanslice.org/mcp/sse"
+    }
+  }
+}
+```
+
+### Claude Code
+
+```bash
+claude mcp add cleanslice --transport sse https://mcp.cleanslice.org/mcp/sse
+```
+
+### Run Locally
 
 ```bash
 git clone https://github.com/CleanSlice/mcp.git
