@@ -16,7 +16,6 @@ import {
   OnModuleInit,
   VERSION_NEUTRAL,
   applyDecorators,
-  Param,
 } from "@nestjs/common";
 import type { Request, Response } from "express";
 import { CanActivate } from "@nestjs/common";
@@ -353,38 +352,6 @@ export function createSseController(
       }
     }
 
-    /**
-     * Diagnostic endpoint for checking active sessions
-     */
-    @Get("teams/:teamId/sessions/debug")
-    async debugSessions(@Param("teamId") teamId: string, @Res() res: Response) {
-      try {
-        // Get local sessions
-        const localSessions = Array.from(this.transports.keys()).map(
-          (sessionId) => ({
-            sessionId,
-            teamId: teamId, // Local sessions are always for the current teamId
-            isLocal: true,
-            hasTransport: this.transports.has(sessionId),
-            hasMcpServer: this.mcpServers.has(sessionId),
-          })
-        );
-        res.json({
-          teamId,
-          localSessions: localSessions.length,
-          localSessionsList: localSessions,
-          pingService: this.pingService.getActiveConnectionsInfo(),
-        });
-      } catch (error) {
-        console.error(
-          `[MCP] Error getting debug info for team ${teamId}:`,
-          error
-        );
-        res
-          .status(500)
-          .json({ error: "Failed to get debug info", details: error.message });
-      }
-    }
   }
 
   return SseController;
