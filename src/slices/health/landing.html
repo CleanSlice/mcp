@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CleanSlice MCP Server</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0a0a0a;
+      --bg-raised: #111113;
+      --bg-card: #161618;
+      --bg-code: #1a1a1e;
+      --border: #232328;
+      --border-hover: #333338;
+      --text: #e4e4e7;
+      --text-muted: #71717a;
+      --text-dim: #52525b;
+      --green: #22c55e;
+      --green-dim: rgba(34, 197, 94, 0.12);
+      --green-glow: rgba(34, 197, 94, 0.06);
+      --accent: #a3e635;
+      --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* --- Noise overlay --- */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 9999;
+    }
+
+    /* --- Layout --- */
+    .container {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* --- Hero --- */
+    .hero {
+      padding: 80px 0 64px;
+      text-align: center;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 600px;
+      height: 400px;
+      background: radial-gradient(ellipse, var(--green-glow) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .logo {
+      width: 72px;
+      height: 72px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-radius: 18px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 28px;
+      color: white;
+      margin-bottom: 28px;
+      box-shadow: 0 0 40px rgba(34, 197, 94, 0.15), 0 4px 12px rgba(0, 0, 0, 0.3);
+      animation: float 6s ease-in-out infinite;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-6px); }
+    }
+
+    .hero h1 {
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.15;
+      margin-bottom: 16px;
+    }
+
+    .hero h1 .highlight {
+      background: linear-gradient(135deg, var(--green), var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 1.1rem;
+      color: var(--text-muted);
+      max-width: 520px;
+      margin: 0 auto 32px;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      max-width: 640px;
+      margin: 0 auto 28px;
+    }
+
+    @media (max-width: 600px) {
+      .hero-actions { flex-direction: column; }
+      .hero-actions .hero-install { width: 100%; }
+    }
+
+    .hero-docs-btn {
+      flex-shrink: 0;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 20px;
+      height: 44px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: white;
+      font-family: var(--font-sans);
+      font-size: 0.82rem;
+      font-weight: 700;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      text-decoration: none;
+      white-space: nowrap;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
+    }
+
+    .hero-docs-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
+    }
+
+    .hero-install {
+      display: flex;
+      align-items: center;
+      flex: 1;
+      min-width: 0;
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .hero-install:hover { border-color: var(--border-hover); }
+
+    .hero-install-prefix {
+      padding: 12px 0 12px 16px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      user-select: none;
+      flex-shrink: 0;
+    }
+
+    .hero-install-cmd {
+      flex: 1;
+      padding: 12px 8px;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      color: var(--accent);
+      background: none;
+      border: none;
+      outline: none;
+      cursor: text;
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .hero-install-btn {
+      flex-shrink: 0;
+      background: none;
+      border: none;
+      border-left: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      padding: 12px 18px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .hero-install-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+    .hero-install-btn.copied { color: var(--green); }
+
+    .hero-tip {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-bottom: 28px;
+    }
+
+    .hero-tip-link {
+      color: var(--green);
+      text-decoration: none;
+    }
+
+    .hero-tip-link:hover { text-decoration: underline; }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      background: var(--green-dim);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      border-radius: 100px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--green);
+      letter-spacing: 0.02em;
+    }
+
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      background: var(--green);
+      border-radius: 50%;
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    /* --- Section --- */
+    section {
+      padding: 48px 0;
+    }
+
+    .section-label {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--green);
+      margin-bottom: 8px;
+    }
+
+    .section-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 6px;
+    }
+
+    .section-desc {
+      color: var(--text-muted);
+      font-size: 0.92rem;
+      margin-bottom: 28px;
+    }
+
+    /* --- Install Grid --- */
+    .install-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    @media (max-width: 600px) {
+      .install-grid { grid-template-columns: 1fr; }
+      .hero h1 { font-size: 1.8rem; }
+    }
+
+    .install-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .install-card:hover {
+      border-color: var(--border-hover);
+      background: #1a1a1e;
+      transform: translateY(-1px);
+    }
+
+    .install-card-head {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 4px;
+    }
+
+    .install-card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-shrink: 0;
+    }
+
+    .install-card-name {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .install-card-hint {
+      font-size: 0.78rem;
+      color: var(--text-dim);
+      margin-top: 2px;
+    }
+
+    .install-card .arrow {
+      position: absolute;
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-dim);
+      font-size: 14px;
+      transition: all 0.2s;
+    }
+
+    .install-card:hover .arrow {
+      color: var(--text-muted);
+      transform: translateY(-50%) translateX(2px);
+    }
+
+    /* --- Expandable config --- */
+    .config-panel {
+      display: none;
+      grid-column: 1 / -1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      animation: slideDown 0.25s ease;
+    }
+
+    .config-panel.active { display: block; }
+
+    @keyframes slideDown {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .config-panel-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .config-panel-title {
+      font-weight: 700;
+      font-size: 0.95rem;
+    }
+
+    .config-close {
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      font-size: 18px;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: all 0.15s;
+    }
+
+    .config-close:hover { color: var(--text); background: var(--bg-raised); }
+
+    .config-step {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+      line-height: 1.6;
+    }
+
+    .config-step strong { color: var(--text); }
+    .config-step code {
+      background: var(--bg-code);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--green);
+    }
+
+    .config-step a {
+      color: var(--green);
+      text-decoration: none;
+    }
+    .config-step a:hover { text-decoration: underline; }
+
+    /* --- Code block --- */
+    .code-block {
+      position: relative;
+      background: var(--bg-code);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .code-block-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.01);
+    }
+
+    .code-lang {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      font-weight: 500;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .copy-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 4px 12px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .copy-btn:hover { color: var(--text); border-color: var(--border-hover); }
+    .copy-btn.copied { color: var(--green); border-color: rgba(34, 197, 94, 0.3); }
+
+    .code-block pre {
+      padding: 16px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 0.82rem;
+      line-height: 1.7;
+      color: var(--text-muted);
+    }
+
+    .code-block pre .key { color: #7dd3fc; }
+    .code-block pre .str { color: #a3e635; }
+    .code-block pre .comment { color: var(--text-dim); }
+
+    /* --- Tools section --- */
+    .tools-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .tool-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 16px;
+      padding: 18px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      transition: border-color 0.2s;
+    }
+
+    .tool-item:hover { border-color: var(--border-hover); }
+
+    .tool-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--green-dim);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 18px;
+    }
+
+    .tool-name {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      font-size: 0.88rem;
+      color: var(--green);
+      margin-bottom: 3px;
+    }
+
+    .tool-desc {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* --- Endpoint URL bar --- */
+    .endpoint-bar {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 18px;
+      margin-top: 28px;
+    }
+
+    .endpoint-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+
+    .endpoint-url {
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      color: var(--accent);
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .endpoint-copy {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 0.75rem;
+      font-weight: 600;
+      padding: 5px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .endpoint-copy:hover { color: var(--text); border-color: var(--border-hover); }
+    .endpoint-copy.copied { color: var(--green); border-color: rgba(34, 197, 94, 0.3); }
+
+    /* --- How it works --- */
+    .steps {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    @media (max-width: 600px) {
+      .steps { grid-template-columns: 1fr; }
+    }
+
+    .step {
+      text-align: center;
+      padding: 28px 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+    }
+
+    .step-num {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--green-dim);
+      color: var(--green);
+      font-weight: 700;
+      font-size: 0.85rem;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 14px;
+    }
+
+    .step-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 6px;
+    }
+
+    .step-text {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      line-height: 1.55;
+    }
+
+    /* --- Footer --- */
+    footer {
+      padding: 48px 0 40px;
+      border-top: 1px solid var(--border);
+      margin-top: 32px;
+    }
+
+    .footer-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 700;
+      font-size: 0.9rem;
+      color: var(--text-muted);
+    }
+
+    .footer-brand .mini-logo {
+      width: 28px;
+      height: 28px;
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      border-radius: 7px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 11px;
+      color: white;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 24px;
+    }
+
+    .footer-links a {
+      color: var(--text-dim);
+      text-decoration: none;
+      font-size: 0.82rem;
+      font-weight: 500;
+      transition: color 0.15s;
+    }
+
+    .footer-links a:hover { color: var(--text); }
+
+    /* --- Divider --- */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--border);
+    }
+
+    /* Selection */
+    ::selection {
+      background: rgba(34, 197, 94, 0.25);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hero -->
+  <div class="container">
+    <section class="hero">
+      <div class="logo">CS</div>
+      <h1>Teach your AI to build with <span class="highlight">CleanSlice</span></h1>
+      <p>An MCP server that gives AI coding agents instant access to CleanSlice architecture docs, conventions, and best practices.</p>
+
+      <div class="hero-actions">
+        <a href="https://cleanslice.org/" target="_blank" rel="noopener" class="hero-docs-btn">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+          Docs
+        </a>
+        <div class="hero-install" id="heroInstall">
+          <span class="hero-install-prefix">$</span>
+          <input class="hero-install-cmd" value="claude mcp add --scope user --transport http cleanslice https://mcp.cleanslice.org/mcp" readonly>
+          <button class="hero-install-btn" id="heroInstallBtn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+      </div>
+      <div class="hero-tip">For Claude Code. <a href="#install" class="hero-tip-link">Install for Cursor, Windsurf & others</a></div>
+
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        Server running
+      </div>
+    </section>
+
+    <!-- How it works -->
+    <section>
+      <div class="section-label">How it works</div>
+      <div class="section-title">Three steps to structured AI output</div>
+      <p class="section-desc">Connect once, and every prompt is architecture-aware.</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-title">Connect your editor</div>
+          <div class="step-text">Add the MCP server to Cursor, Claude, VS Code, or any MCP client.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-title">Ask the AI to build</div>
+          <div class="step-text">Prompt as usual — the agent now has access to CleanSlice docs and conventions.</div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-title">Get clean output</div>
+          <div class="step-text">Code follows slice architecture, naming rules, and project structure automatically.</div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Install -->
+    <section id="install">
+      <div class="section-label">Quick setup</div>
+      <div class="section-title">Install in your editor</div>
+      <p class="section-desc">Click your editor below for copy-paste config.</p>
+
+      <div class="install-grid" id="installGrid">
+
+        <div class="install-card" data-editor="cursor">
+          <div class="install-card-head">
+            <div class="install-card-icon" style="background: #1e1e2e;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 3l14 9-14 9V3z" fill="#00d4aa"/></svg>
+            </div>
+            <div>
+              <div class="install-card-name">Cursor</div>
+              <div class="install-card-hint">~/.cursor/mcp.json</div>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </div>
+
+        <div class="install-card" data-editor="claude-code">
+          <div class="install-card-head">
+            <div class="install-card-icon" style="background: #1a1510;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#d4a574"/></svg>
+            </div>
+            <div>
+              <div class="install-card-name">Claude Code</div>
+              <div class="install-card-hint">One command</div>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </div>
+
+        <div class="install-card" data-editor="vscode">
+          <div class="install-card-head">
+            <div class="install-card-icon" style="background: #1a2333;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M17 2L7 12l10 10 5-3V5l-5-3zM2 12l5-4.5v9L2 12z" fill="#4da6ff"/></svg>
+            </div>
+            <div>
+              <div class="install-card-name">VS Code</div>
+              <div class="install-card-hint">.vscode/mcp.json</div>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </div>
+
+        <div class="install-card" data-editor="windsurf">
+          <div class="install-card-head">
+            <div class="install-card-icon" style="background: #161830;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 17c3-4 6-4 9 0s6 4 9 0" stroke="#7c8cff" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+              <div class="install-card-name">Windsurf</div>
+              <div class="install-card-hint">MCP config file</div>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </div>
+
+        <div class="install-card" data-editor="claude-desktop">
+          <div class="install-card-head">
+            <div class="install-card-icon" style="background: #1a1510;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="14" rx="3" stroke="#d4a574" stroke-width="2" fill="none"/><path d="M8 22h8" stroke="#d4a574" stroke-width="2" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+              <div class="install-card-name">Claude Desktop</div>
+              <div class="install-card-hint">claude_desktop_config.json</div>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </div>
+
+        <div class="install-card" data-editor="opencode">
+          <div class="install-card-head">
+            <div class="install-card-icon" style="background: #1a2a1a;">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke="#55cc55" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </div>
+            <div>
+              <div class="install-card-name">Opencode</div>
+              <div class="install-card-hint">Opencode config</div>
+            </div>
+          </div>
+          <span class="arrow">→</span>
+        </div>
+
+        <!-- Config panels inserted dynamically -->
+      </div>
+
+      <!-- MCP Endpoint -->
+      <div class="endpoint-bar">
+        <span class="endpoint-label">Endpoint</span>
+        <span class="endpoint-url">https://mcp.cleanslice.org/mcp</span>
+        <button class="endpoint-copy" onclick="copyText('https://mcp.cleanslice.org/mcp', this)">Copy</button>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Available Tools -->
+    <section>
+      <div class="section-label">Capabilities</div>
+      <div class="section-title">What your AI gets access to</div>
+      <p class="section-desc">Three tools that turn any MCP-compatible agent into a CleanSlice expert.</p>
+
+      <div class="tools-list">
+        <div class="tool-item">
+          <div class="tool-icon">⚡</div>
+          <div>
+            <div class="tool-name">get-started</div>
+            <div class="tool-desc">Returns the essential CleanSlice rules and naming conventions. The AI calls this first to understand how to structure your project — slices, layers, file placement, and the critical singular-naming rule.</div>
+          </div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-icon">📂</div>
+          <div>
+            <div class="tool-name">list-categories</div>
+            <div class="tool-desc">Lists all available documentation categories (quickstart, patterns, best practices, etc.) so the AI knows what deeper knowledge is available before diving in.</div>
+          </div>
+        </div>
+        <div class="tool-item">
+          <div class="tool-icon">🔍</div>
+          <div>
+            <div class="tool-name">search</div>
+            <div class="tool-desc">Full-text search across docs — filterable by query, framework (NestJS, Nuxt), development phase, feature name, category, or tags. The AI uses this to find exactly the right pattern for your use case.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="divider"></div>
+
+    <!-- Self-host / Docker -->
+    <section>
+      <div class="section-label">Advanced</div>
+      <div class="section-title">Self-host or run locally</div>
+      <p class="section-desc">Clone the repo to run your own instance or customize documentation.</p>
+
+      <div class="code-block">
+        <div class="code-block-header">
+          <span class="code-lang">bash</span>
+          <button class="copy-btn" onclick="copyCode(this)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+            Copy
+          </button>
+        </div>
+        <pre><span class="comment"># Clone and run locally</span>
+git clone https://github.com/CleanSlice/mcp.git
+cd mcp
+npm install
+npm run dev
+
+<span class="comment"># Or use Docker</span>
+docker build -t cleanslice-mcp .
+docker run -p 8080:8080 cleanslice-mcp</pre>
+      </div>
+    </section>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <div class="mini-logo">CS</div>
+          CleanSlice
+        </div>
+        <div class="footer-links">
+          <a href="/health">Health</a>
+          <a href="/api">API Docs</a>
+          <a href="https://github.com/CleanSlice/mcp" target="_blank" rel="noopener">GitHub</a>
+          <a href="https://cleanslice.org" target="_blank" rel="noopener">Website</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    // Hero install copy
+    document.getElementById('heroInstallBtn').addEventListener('click', function() {
+      const cmd = document.querySelector('.hero-install-cmd').value;
+      const btn = this;
+      navigator.clipboard.writeText(cmd).then(() => {
+        btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    });
+
+    // Editor config data
+    const configs = {
+      cursor: {
+        title: 'Cursor',
+        steps: `<p class="config-step">Open <strong>Settings → Cursor Settings → MCP → Add new global MCP server</strong>, or paste into <code>~/.cursor/mcp.json</code>. <a href="https://docs.cursor.com/context/model-context-protocol" target="_blank" rel="noopener">Docs ↗</a></p>`,
+        lang: 'json',
+        code: `{
+  "mcpServers": {
+    "cleanslice": {
+      "type": "http",
+      "url": "https://mcp.cleanslice.org/mcp"
+    }
+  }
+}`
+      },
+      'claude-code': {
+        title: 'Claude Code',
+        steps: `<p class="config-step">Run this in your terminal. <a href="https://docs.anthropic.com/en/docs/claude-code/mcp" target="_blank" rel="noopener">Docs ↗</a></p>`,
+        lang: 'bash',
+        code: `claude mcp add --scope user --transport http cleanslice https://mcp.cleanslice.org/mcp`
+      },
+      vscode: {
+        title: 'VS Code (Copilot)',
+        steps: `<p class="config-step">Add to <code>.vscode/mcp.json</code> in your project. <a href="https://code.visualstudio.com/docs/copilot/chat/mcp-servers" target="_blank" rel="noopener">Docs ↗</a></p>`,
+        lang: 'json',
+        code: `{
+  "servers": {
+    "cleanslice": {
+      "type": "http",
+      "url": "https://mcp.cleanslice.org/mcp"
+    }
+  }
+}`
+      },
+      windsurf: {
+        title: 'Windsurf',
+        steps: `<p class="config-step">Add to your Windsurf MCP config file. <a href="https://docs.windsurf.com/windsurf/mcp" target="_blank" rel="noopener">Docs ↗</a></p>`,
+        lang: 'json',
+        code: `{
+  "mcpServers": {
+    "cleanslice": {
+      "type": "http",
+      "serverUrl": "https://mcp.cleanslice.org/mcp"
+    }
+  }
+}`
+      },
+      'claude-desktop': {
+        title: 'Claude Desktop',
+        steps: `<p class="config-step">Add to your <code>claude_desktop_config.json</code>. <a href="https://modelcontextprotocol.io/quickstart/user" target="_blank" rel="noopener">Docs ↗</a></p>`,
+        lang: 'json',
+        code: `{
+  "mcpServers": {
+    "cleanslice": {
+      "type": "http",
+      "url": "https://mcp.cleanslice.org/mcp"
+    }
+  }
+}`
+      },
+      opencode: {
+        title: 'Opencode',
+        steps: `<p class="config-step">Add to your Opencode configuration file. <a href="https://opencode.ai/docs/mcp-servers" target="_blank" rel="noopener">Docs ↗</a></p>`,
+        lang: 'json',
+        code: `{
+  "mcp": {
+    "cleanslice": {
+      "type": "remote",
+      "url": "https://mcp.cleanslice.org/mcp",
+      "enabled": true
+    }
+  }
+}`
+      }
+    };
+
+    let activePanel = null;
+
+    document.querySelectorAll('.install-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const editor = card.dataset.editor;
+        const grid = document.getElementById('installGrid');
+
+        // Remove existing panel
+        const existing = grid.querySelector('.config-panel');
+        if (existing) {
+          if (activePanel === editor) {
+            existing.remove();
+            activePanel = null;
+            return;
+          }
+          existing.remove();
+        }
+
+        const cfg = configs[editor];
+        const panel = document.createElement('div');
+        panel.className = 'config-panel active';
+        panel.innerHTML = `
+          <div class="config-panel-header">
+            <span class="config-panel-title">${cfg.title}</span>
+            <button class="config-close" onclick="this.closest('.config-panel').remove(); activePanel=null;">✕</button>
+          </div>
+          ${cfg.steps}
+          <div class="code-block">
+            <div class="code-block-header">
+              <span class="code-lang">${cfg.lang}</span>
+              <button class="copy-btn" onclick="copyCode(this)">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                Copy
+              </button>
+            </div>
+            <pre>${escapeHtml(cfg.code)}</pre>
+          </div>
+        `;
+
+        // Insert after the clicked card's row
+        const cards = [...grid.querySelectorAll('.install-card')];
+        const idx = cards.indexOf(card);
+        const rowEnd = idx % 2 === 0 ? cards[idx + 1] || card : card;
+        rowEnd.after(panel);
+
+        activePanel = editor;
+      });
+    });
+
+    function escapeHtml(str) {
+      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    }
+
+    function copyCode(btn) {
+      const pre = btn.closest('.code-block').querySelector('pre');
+      navigator.clipboard.writeText(pre.textContent).then(() => {
+        btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied!`;
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy`;
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+
+    function copyText(text, btn) {
+      navigator.clipboard.writeText(text).then(() => {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('copied');
+        }, 2000);
+      });
+    }
+  </script>
+
+</body>
+</html>

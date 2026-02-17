@@ -155,8 +155,8 @@ docker run -p 8080:8080 cleanslice-mcp
 
 | Endpoint | Description |
 |----------|-------------|
-| `GET /mcp/sse` | SSE transport (for Claude Desktop, Cursor) |
-| `POST /mcp/messages` | SSE message handler |
-| `POST /mcp/mcp` | Streamable HTTP transport |
+| `GET /sse` | SSE transport (for Claude Desktop, Cursor) |
+| `POST /messages` | SSE message handler |
+| `POST /mcp` | Streamable HTTP transport |
 | `GET /health` | Health check |
 | `GET /api` | Swagger docs |

@@ -9,6 +9,11 @@
         "include": "**/*.md",
         "outDir": "dist",
         "watchAssets": true
+      },
+      {
+        "include": "**/*.html",
+        "outDir": "dist",
+        "watchAssets": true
       }
     ]
   }
