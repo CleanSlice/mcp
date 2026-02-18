@@ -17,6 +17,30 @@ claude mcp add --scope user --transport http cleanslice https://mcp.cleanslice.o
 
 > Remove `--scope user` to install for the current project only.
 
+**Tip: enforce MCP usage with a Stop hook**
+
+To make sure Claude Code always consults the CleanSlice MCP before finishing a task, add the following to your project's `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "agent",
+            "timeout": 180,
+            "prompt": "You are a verification subagent. Your job: ensure the main Claude Code agent used the `cleanslice` MCP knowledge sufficiently and did not guess.\n\nContext JSON:\n$ARGUMENTS\n\nVerification requirements:\n1) Identify what the user asked for (deliverables + constraints) from the conversation/transcript in $ARGUMENTS.\n2) Verify the agent consulted the `cleanslice` MCP server for relevant knowledge BEFORE finalizing:\n   - Must call `cleanslice` \"get-started\" at least once (or equivalent) to confirm the server's purpose and usage.\n   - Must call \"list-categories\" to understand the available knowledge areas.\n   - Must call \"search\" with task-relevant queries (at least 2 searches) covering: (a) core implementation details, (b) edge cases / constraints.\n3) Validate coverage:\n   - If any required category is relevant but not checked, fail.\n   - If answers include specifics that are not supported by MCP results, fail.\n4) Output STRICT JSON only:\n   - If everything is verified: {\"ok\": true}\n   - If anything is missing/unsupported: {\"ok\": false, \"reason\": \"What is missing + exact MCP calls the main agent must run next (e.g., run list-categories, then search for X/Y, then update the solution).\"}\n\nImportant:\n- `cleanslice` tools will appear as MCP tools. Use whatever exact tool names are available in this environment (they follow the mcp__<server>__<tool> naming pattern).\n- Do not allow stopping until MCP-backed evidence is sufficient."
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+This hook runs a verification agent every time Claude Code tries to stop, ensuring it actually consulted the CleanSlice docs rather than guessing.
+
 </details>
 
 <details>

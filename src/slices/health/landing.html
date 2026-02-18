@@ -376,7 +376,27 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
         title: 'Claude Code',
         steps: `<p class="text-[0.85rem] text-muted-foreground mb-3 leading-relaxed">Run this in your terminal. <a href="https://docs.anthropic.com/en/docs/claude-code/mcp" target="_blank" rel="noopener" class="text-primary no-underline hover:underline">Docs ↗</a></p>`,
         lang: 'bash',
-        code: `claude mcp add --scope user --transport http cleanslice https://mcp.cleanslice.org/mcp`
+        code: `claude mcp add --scope user --transport http cleanslice https://mcp.cleanslice.org/mcp`,
+        tip: {
+          title: 'Tip: enforce MCP usage with a Stop hook',
+          description: 'To make sure Claude Code always consults the CleanSlice MCP before finishing a task, add the following to your project\u2019s <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-[0.8rem] text-primary">.claude/settings.json</code>. This runs a verification agent every time Claude Code tries to stop, ensuring it actually consulted the docs rather than guessing.',
+          lang: 'json',
+          code: `{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "agent",
+            "timeout": 180,
+            "prompt": "You are a verification subagent. Your job: ensure the main Claude Code agent used the \`cleanslice\` MCP knowledge sufficiently and did not guess.\\n\\nContext JSON:\\n$ARGUMENTS\\n\\nVerification requirements:\\n1) Identify what the user asked for (deliverables + constraints) from the conversation/transcript in $ARGUMENTS.\\n2) Verify the agent consulted the \`cleanslice\` MCP server for relevant knowledge BEFORE finalizing:\\n   - Must call \`cleanslice\` \\"get-started\\" at least once (or equivalent) to confirm the server's purpose and usage.\\n   - Must call \\"list-categories\\" to understand the available knowledge areas.\\n   - Must call \\"search\\" with task-relevant queries (at least 2 searches) covering: (a) core implementation details, (b) edge cases / constraints.\\n3) Validate coverage:\\n   - If any required category is relevant but not checked, fail.\\n   - If answers include specifics that are not supported by MCP results, fail.\\n4) Output STRICT JSON only:\\n   - If everything is verified: {\\"ok\\": true}\\n   - If anything is missing/unsupported: {\\"ok\\": false, \\"reason\\": \\"What is missing + exact MCP calls the main agent must run next (e.g., run list-categories, then search for X/Y, then update the solution).\\"}\\n\\nImportant:\\n- \`cleanslice\` tools will appear as MCP tools. Use whatever exact tool names are available in this environment (they follow the mcp__<server>__<tool> naming pattern).\\n- Do not allow stopping until MCP-backed evidence is sufficient."
+          }
+        ]
+      }
+    ]
+  }
+}`
+        }
       },
       vscode: {
         title: 'VS Code (Copilot)',
@@ -454,6 +474,23 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
         const cfg = configs[editor];
         const panel = document.createElement('div');
         panel.className = 'config-panel active col-span-full bg-card border border-border rounded-xl p-6';
+        const tipHtml = cfg.tip ? `
+          <div class="mt-6 p-5 bg-primary/5 border border-primary/15 rounded-xl">
+            <div class="font-bold text-[0.9rem] text-primary mb-2">${cfg.tip.title}</div>
+            <p class="text-[0.85rem] text-muted-foreground mb-3 leading-relaxed">${cfg.tip.description}</p>
+            <div class="code-block bg-muted border border-border rounded-[10px] overflow-hidden">
+              <div class="flex items-center justify-between px-4 py-2.5 border-b border-border bg-white/[0.01]">
+                <span class="font-mono text-[0.72rem] font-medium text-[#6E8796] uppercase tracking-wide">${cfg.tip.lang}</span>
+                <button class="copy-btn bg-transparent border border-border text-muted-foreground font-semibold text-xs py-1 px-3 rounded-md cursor-pointer transition-all duration-150 flex items-center gap-1.5 hover:text-foreground hover:border-[#3A5A6A]" onclick="copyCode(this)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                  Copy
+                </button>
+              </div>
+              <pre class="p-4 overflow-x-auto font-mono text-[0.82rem] leading-relaxed text-muted-foreground">${escapeHtml(cfg.tip.code)}</pre>
+            </div>
+          </div>
+        ` : '';
+
         panel.innerHTML = `
           <div class="flex items-center justify-between mb-4">
             <span class="font-bold text-[0.95rem]">${cfg.title}</span>
@@ -470,6 +507,7 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
             </div>
             <pre class="p-4 overflow-x-auto font-mono text-[0.82rem] leading-relaxed text-muted-foreground">${escapeHtml(cfg.code)}</pre>
           </div>
+          ${tipHtml}
         `;
 
         // Insert after the clicked card's row
