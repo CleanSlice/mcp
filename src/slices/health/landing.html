@@ -1,43 +1,58 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="dark scroll-smooth">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CleanSlice MCP Server</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            background: '#0F1C24',
+            foreground: '#D9E4EC',
+            card: '#132531',
+            'card-foreground': '#D9E4EC',
+            primary: '#5CC6D6',
+            'primary-foreground': '#0F1C24',
+            secondary: '#1E3442',
+            'secondary-foreground': '#6ED8E8',
+            muted: '#1A2B36',
+            'muted-foreground': '#9CB2BF',
+            accent: '#3FA6B8',
+            'accent-foreground': '#E0FAFF',
+            border: '#27414F',
+            input: '#27414F',
+            ring: '#6ED8E8',
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          animation: {
+            'float': 'float 6s ease-in-out infinite',
+            'pulse-dot': 'pulse-dot 2s ease-in-out infinite',
+          },
+          keyframes: {
+            'float': {
+              '0%, 100%': { transform: 'translateY(0)' },
+              '50%': { transform: 'translateY(-6px)' },
+            },
+            'pulse-dot': {
+              '0%, 100%': { opacity: '1' },
+              '50%': { opacity: '0.4' },
+            },
+          },
+        },
+      },
+    }
+  </script>
   <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #0a0a0a;
-      --bg-raised: #111113;
-      --bg-card: #161618;
-      --bg-code: #1a1a1e;
-      --border: #232328;
-      --border-hover: #333338;
-      --text: #e4e4e7;
-      --text-muted: #71717a;
-      --text-dim: #52525b;
-      --green: #22c55e;
-      --green-dim: rgba(34, 197, 94, 0.12);
-      --green-glow: rgba(34, 197, 94, 0.06);
-      --accent: #a3e635;
-      --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
-      --font-mono: 'JetBrains Mono', monospace;
-    }
-
-    html { scroll-behavior: smooth; }
-
-    body {
-      font-family: var(--font-sans);
-      background: var(--bg);
-      color: var(--text);
-      line-height: 1.6;
-      -webkit-font-smoothing: antialiased;
-    }
-
-    /* --- Noise overlay --- */
+    /* Noise overlay */
     body::before {
       content: '';
       position: fixed;
@@ -47,854 +62,262 @@
       z-index: 9999;
     }
 
-    /* --- Layout --- */
-    .container {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 0 24px;
-    }
-
-    /* --- Hero --- */
-    .hero {
-      padding: 80px 0 64px;
-      text-align: center;
-      position: relative;
-    }
-
-    .hero::before {
-      content: '';
+    /* Hero glow */
+    .hero-glow {
       position: absolute;
       top: -100px;
       left: 50%;
       transform: translateX(-50%);
       width: 600px;
       height: 400px;
-      background: radial-gradient(ellipse, var(--green-glow) 0%, transparent 70%);
+      background: radial-gradient(ellipse, rgba(92,198,214,0.08) 0%, transparent 70%);
       pointer-events: none;
     }
 
-    .logo {
-      width: 72px;
-      height: 72px;
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      border-radius: 18px;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 28px;
-      color: white;
-      margin-bottom: 28px;
-      box-shadow: 0 0 40px rgba(34, 197, 94, 0.15), 0 4px 12px rgba(0, 0, 0, 0.3);
-      animation: float 6s ease-in-out infinite;
-    }
-
-    @keyframes float {
-      0%, 100% { transform: translateY(0); }
-      50% { transform: translateY(-6px); }
-    }
-
-    .hero h1 {
-      font-size: 2.5rem;
-      font-weight: 800;
-      letter-spacing: -0.03em;
-      line-height: 1.15;
-      margin-bottom: 16px;
-    }
-
-    .hero h1 .highlight {
-      background: linear-gradient(135deg, var(--green), var(--accent));
+    /* Gradient text */
+    .gradient-text {
+      background: linear-gradient(135deg, #5CC6D6, #6ED8E8);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    .hero p {
-      font-size: 1.1rem;
-      color: var(--text-muted);
-      max-width: 520px;
-      margin: 0 auto 32px;
-      line-height: 1.7;
-    }
-
-    .hero-actions {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      max-width: 640px;
-      margin: 0 auto 28px;
-    }
-
-    @media (max-width: 600px) {
-      .hero-actions { flex-direction: column; }
-      .hero-actions .hero-install { width: 100%; }
-    }
-
-    .hero-docs-btn {
-      flex-shrink: 0;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 0 20px;
-      height: 44px;
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      color: white;
-      font-family: var(--font-sans);
-      font-size: 0.82rem;
-      font-weight: 700;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      text-decoration: none;
-      white-space: nowrap;
-      transition: all 0.2s;
-      box-shadow: 0 2px 8px rgba(34, 197, 94, 0.2);
-    }
-
-    .hero-docs-btn:hover {
-      transform: translateY(-1px);
-      box-shadow: 0 4px 16px rgba(34, 197, 94, 0.3);
-    }
-
-    .hero-install {
-      display: flex;
-      align-items: center;
-      flex: 1;
-      min-width: 0;
-      background: var(--bg-code);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-      transition: border-color 0.2s;
-    }
-
-    .hero-install:hover { border-color: var(--border-hover); }
-
-    .hero-install-prefix {
-      padding: 12px 0 12px 16px;
-      font-family: var(--font-mono);
-      font-size: 0.82rem;
-      color: var(--text-dim);
-      user-select: none;
-      flex-shrink: 0;
-    }
-
-    .hero-install-cmd {
-      flex: 1;
-      padding: 12px 8px;
-      font-family: var(--font-mono);
-      font-size: 0.82rem;
-      color: var(--accent);
-      background: none;
-      border: none;
-      outline: none;
-      cursor: text;
-      min-width: 0;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .hero-install-btn {
-      flex-shrink: 0;
-      background: none;
-      border: none;
-      border-left: 1px solid var(--border);
-      color: var(--text-muted);
-      font-family: var(--font-sans);
-      font-size: 0.78rem;
-      font-weight: 600;
-      padding: 12px 18px;
-      cursor: pointer;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      white-space: nowrap;
-    }
-
-    .hero-install-btn:hover { color: var(--text); background: rgba(255,255,255,0.03); }
-    .hero-install-btn.copied { color: var(--green); }
-
-    .hero-tip {
-      font-size: 0.78rem;
-      color: var(--text-dim);
-      margin-bottom: 28px;
-    }
-
-    .hero-tip-link {
-      color: var(--green);
-      text-decoration: none;
-    }
-
-    .hero-tip-link:hover { text-decoration: underline; }
-
-    .status-badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 16px;
-      background: var(--green-dim);
-      border: 1px solid rgba(34, 197, 94, 0.2);
-      border-radius: 100px;
-      font-size: 0.82rem;
-      font-weight: 600;
-      color: var(--green);
-      letter-spacing: 0.02em;
-    }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      background: var(--green);
-      border-radius: 50%;
-      animation: pulse 2s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.4; }
-    }
-
-    /* --- Section --- */
-    section {
-      padding: 48px 0;
-    }
-
-    .section-label {
-      font-size: 0.7rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.12em;
-      color: var(--green);
-      margin-bottom: 8px;
-    }
-
-    .section-title {
-      font-size: 1.5rem;
-      font-weight: 700;
-      letter-spacing: -0.02em;
-      margin-bottom: 6px;
-    }
-
-    .section-desc {
-      color: var(--text-muted);
-      font-size: 0.92rem;
-      margin-bottom: 28px;
-    }
-
-    /* --- Install Grid --- */
-    .install-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-    }
-
-    @media (max-width: 600px) {
-      .install-grid { grid-template-columns: 1fr; }
-      .hero h1 { font-size: 1.8rem; }
-    }
-
-    .install-card {
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 20px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .install-card:hover {
-      border-color: var(--border-hover);
-      background: #1a1a1e;
-      transform: translateY(-1px);
-    }
-
-    .install-card-head {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 4px;
-    }
-
-    .install-card-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 18px;
-      flex-shrink: 0;
-    }
-
-    .install-card-name {
-      font-weight: 700;
-      font-size: 0.95rem;
-    }
-
-    .install-card-hint {
-      font-size: 0.78rem;
-      color: var(--text-dim);
-      margin-top: 2px;
-    }
-
-    .install-card .arrow {
-      position: absolute;
-      right: 18px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: var(--text-dim);
-      font-size: 14px;
-      transition: all 0.2s;
-    }
-
-    .install-card:hover .arrow {
-      color: var(--text-muted);
-      transform: translateY(-50%) translateX(2px);
-    }
-
-    /* --- Expandable config --- */
-    .config-panel {
-      display: none;
-      grid-column: 1 / -1;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 24px;
-      animation: slideDown 0.25s ease;
-    }
-
+    /* Config panel animation */
+    .config-panel { display: none; animation: slideDown 0.25s ease; }
     .config-panel.active { display: block; }
-
     @keyframes slideDown {
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
-    .config-panel-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 16px;
-    }
-
-    .config-panel-title {
-      font-weight: 700;
-      font-size: 0.95rem;
-    }
-
-    .config-close {
-      background: none;
-      border: none;
-      color: var(--text-dim);
-      cursor: pointer;
-      font-size: 18px;
-      padding: 4px 8px;
-      border-radius: 6px;
-      transition: all 0.15s;
-    }
-
-    .config-close:hover { color: var(--text); background: var(--bg-raised); }
-
-    .config-step {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      margin-bottom: 12px;
-      line-height: 1.6;
-    }
-
-    .config-step strong { color: var(--text); }
-    .config-step code {
-      background: var(--bg-code);
-      padding: 2px 7px;
-      border-radius: 4px;
-      font-family: var(--font-mono);
-      font-size: 0.8rem;
-      color: var(--green);
-    }
-
-    .config-step a {
-      color: var(--green);
-      text-decoration: none;
-    }
-    .config-step a:hover { text-decoration: underline; }
-
-    /* --- Code block --- */
-    .code-block {
-      position: relative;
-      background: var(--bg-code);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      overflow: hidden;
-    }
-
-    .code-block-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(255,255,255,0.01);
-    }
-
-    .code-lang {
-      font-family: var(--font-mono);
-      font-size: 0.72rem;
-      font-weight: 500;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.06em;
-    }
-
-    .copy-btn {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-family: var(--font-sans);
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 4px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.15s;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .copy-btn:hover { color: var(--text); border-color: var(--border-hover); }
-    .copy-btn.copied { color: var(--green); border-color: rgba(34, 197, 94, 0.3); }
-
-    .code-block pre {
-      padding: 16px;
-      overflow-x: auto;
-      font-family: var(--font-mono);
-      font-size: 0.82rem;
-      line-height: 1.7;
-      color: var(--text-muted);
-    }
-
-    .code-block pre .key { color: #7dd3fc; }
-    .code-block pre .str { color: #a3e635; }
-    .code-block pre .comment { color: var(--text-dim); }
-
-    /* --- Tools section --- */
-    .tools-list {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .tool-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 16px;
-      padding: 18px 20px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      transition: border-color 0.2s;
-    }
-
-    .tool-item:hover { border-color: var(--border-hover); }
-
-    .tool-icon {
-      width: 40px;
-      height: 40px;
-      background: var(--green-dim);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      font-size: 18px;
-    }
-
-    .tool-name {
-      font-family: var(--font-mono);
-      font-weight: 600;
-      font-size: 0.88rem;
-      color: var(--green);
-      margin-bottom: 3px;
-    }
-
-    .tool-desc {
-      font-size: 0.85rem;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    /* --- Endpoint URL bar --- */
-    .endpoint-bar {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px 18px;
-      margin-top: 28px;
-    }
-
-    .endpoint-label {
-      font-size: 0.72rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--text-dim);
-      white-space: nowrap;
-    }
-
-    .endpoint-url {
-      font-family: var(--font-mono);
-      font-size: 0.88rem;
-      color: var(--accent);
-      flex: 1;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    .endpoint-copy {
-      background: none;
-      border: 1px solid var(--border);
-      color: var(--text-muted);
-      font-family: var(--font-sans);
-      font-size: 0.75rem;
-      font-weight: 600;
-      padding: 5px 14px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.15s;
-      white-space: nowrap;
-    }
-
-    .endpoint-copy:hover { color: var(--text); border-color: var(--border-hover); }
-    .endpoint-copy.copied { color: var(--green); border-color: rgba(34, 197, 94, 0.3); }
-
-    /* --- How it works --- */
-    .steps {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 16px;
-    }
-
-    @media (max-width: 600px) {
-      .steps { grid-template-columns: 1fr; }
-    }
-
-    .step {
-      text-align: center;
-      padding: 28px 20px;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-    }
-
-    .step-num {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      background: var(--green-dim);
-      color: var(--green);
-      font-weight: 700;
-      font-size: 0.85rem;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 14px;
-    }
-
-    .step-title {
-      font-weight: 700;
-      font-size: 0.9rem;
-      margin-bottom: 6px;
-    }
-
-    .step-text {
-      font-size: 0.82rem;
-      color: var(--text-muted);
-      line-height: 1.55;
-    }
-
-    /* --- Footer --- */
-    footer {
-      padding: 48px 0 40px;
-      border-top: 1px solid var(--border);
-      margin-top: 32px;
-    }
-
-    .footer-inner {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 16px;
-    }
-
-    .footer-brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-      font-size: 0.9rem;
-      color: var(--text-muted);
-    }
-
-    .footer-brand .mini-logo {
-      width: 28px;
-      height: 28px;
-      background: linear-gradient(135deg, #22c55e, #16a34a);
-      border-radius: 7px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 800;
-      font-size: 11px;
-      color: white;
-    }
-
-    .footer-links {
-      display: flex;
-      gap: 24px;
-    }
-
-    .footer-links a {
-      color: var(--text-dim);
-      text-decoration: none;
-      font-size: 0.82rem;
-      font-weight: 500;
-      transition: color 0.15s;
-    }
-
-    .footer-links a:hover { color: var(--text); }
-
-    /* --- Divider --- */
-    .divider {
-      width: 100%;
-      height: 1px;
-      background: var(--border);
-    }
-
     /* Selection */
-    ::selection {
-      background: rgba(34, 197, 94, 0.25);
-    }
+    ::selection { background: rgba(92, 198, 214, 0.25); }
   </style>
 </head>
-<body>
+<body class="bg-background text-foreground font-sans leading-relaxed antialiased">
 
-  <!-- Hero -->
-  <div class="container">
-    <section class="hero">
-      <div class="logo">CS</div>
-      <h1>Teach your AI to build with <span class="highlight">CleanSlice</span></h1>
-      <p>An MCP server that gives AI coding agents instant access to CleanSlice architecture docs, conventions, and best practices.</p>
+  <div class="max-w-[860px] mx-auto px-6">
 
-      <div class="hero-actions">
-        <a href="https://cleanslice.org/" target="_blank" rel="noopener" class="hero-docs-btn">
+    <!-- Hero -->
+    <section class="pt-20 pb-16 text-center relative">
+      <div class="hero-glow"></div>
+
+      <div class="w-[72px] h-[72px] bg-gradient-to-br from-primary to-[#4FA3D1] rounded-[18px] inline-flex items-center justify-center font-extrabold text-[28px] text-white mb-7 shadow-[0_0_40px_rgba(92,198,214,0.2),0_4px_12px_rgba(0,0,0,0.3)] animate-float">CS</div>
+
+      <h1 class="text-[2.5rem] max-sm:text-[1.8rem] font-extrabold tracking-tight leading-[1.15] mb-4">
+        Teach your AI to build with <span class="gradient-text">CleanSlice</span>
+      </h1>
+
+      <p class="text-lg text-muted-foreground max-w-[520px] mx-auto mb-8 leading-relaxed">
+        An MCP server that gives AI coding agents instant access to CleanSlice architecture docs, conventions, and best practices.
+      </p>
+
+      <!-- Install bar -->
+      <div class="flex items-center gap-2.5 max-w-[640px] mx-auto mb-3 max-sm:flex-col">
+        <a href="https://cleanslice.org/" target="_blank" rel="noopener"
+           class="shrink-0 inline-flex items-center gap-2 px-5 h-11 bg-gradient-to-br from-primary to-[#4FA3D1] text-white text-[0.82rem] font-bold rounded-[10px] no-underline whitespace-nowrap transition-all duration-200 shadow-[0_2px_8px_rgba(92,198,214,0.25)] hover:-translate-y-px hover:shadow-[0_4px_16px_rgba(92,198,214,0.35)]">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
           Docs
         </a>
-        <div class="hero-install" id="heroInstall">
-          <span class="hero-install-prefix">$</span>
-          <input class="hero-install-cmd" value="claude mcp add --scope user --transport http cleanslice https://mcp.cleanslice.org/mcp" readonly>
-          <button class="hero-install-btn" id="heroInstallBtn">
+        <div class="flex items-center flex-1 min-w-0 max-sm:w-full bg-muted border border-border rounded-[10px] overflow-hidden transition-colors hover:border-[#3A5A6A]" id="heroInstall">
+          <span class="py-3 pl-4 font-mono text-[0.82rem] text-[#6E8796] select-none shrink-0">$</span>
+          <input class="flex-1 py-3 px-2 font-mono text-[0.82rem] text-primary bg-transparent border-none outline-none min-w-0 overflow-hidden text-ellipsis whitespace-nowrap" value="claude mcp add --scope user --transport http cleanslice https://mcp.cleanslice.org/mcp" readonly>
+          <button id="heroInstallBtn" class="shrink-0 bg-transparent border-none border-l border-border py-3 px-[18px] text-muted-foreground font-semibold text-[0.78rem] cursor-pointer transition-all duration-150 flex items-center gap-1.5 whitespace-nowrap hover:text-foreground hover:bg-white/[0.03]">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
             Copy
           </button>
         </div>
       </div>
-      <div class="hero-tip">For Claude Code. <a href="#install" class="hero-tip-link">Install for Cursor, Windsurf & others</a></div>
 
-      <div class="status-badge">
-        <span class="status-dot"></span>
+      <p class="text-[0.78rem] text-[#6E8796] mb-7">
+        For Claude Code. <a href="#install" class="text-primary no-underline hover:underline">Install for Cursor, Windsurf & others</a>
+      </p>
+
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 bg-primary/10 border border-primary/20 rounded-full text-[0.82rem] font-semibold text-primary tracking-wide">
+        <span class="w-[7px] h-[7px] bg-primary rounded-full animate-pulse-dot"></span>
         Server running
       </div>
     </section>
 
     <!-- How it works -->
-    <section>
-      <div class="section-label">How it works</div>
-      <div class="section-title">Three steps to structured AI output</div>
-      <p class="section-desc">Connect once, and every prompt is architecture-aware.</p>
-      <div class="steps">
-        <div class="step">
-          <div class="step-num">1</div>
-          <div class="step-title">Connect your editor</div>
-          <div class="step-text">Add the MCP server to Cursor, Claude, VS Code, or any MCP client.</div>
+    <section class="py-12">
+      <div class="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-primary mb-2">How it works</div>
+      <h2 class="text-2xl font-bold tracking-tight mb-1.5">Three steps to structured AI output</h2>
+      <p class="text-muted-foreground text-[0.92rem] mb-7">Connect once, and every prompt is architecture-aware.</p>
+      <div class="grid grid-cols-3 max-sm:grid-cols-1 gap-4">
+        <div class="text-center p-7 bg-card border border-border rounded-xl">
+          <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm inline-flex items-center justify-center mb-3.5">1</div>
+          <div class="font-bold text-[0.9rem] mb-1.5">Connect your editor</div>
+          <div class="text-[0.82rem] text-muted-foreground leading-snug">Add the MCP server to Cursor, Claude, VS Code, or any MCP client.</div>
         </div>
-        <div class="step">
-          <div class="step-num">2</div>
-          <div class="step-title">Ask the AI to build</div>
-          <div class="step-text">Prompt as usual — the agent now has access to CleanSlice docs and conventions.</div>
+        <div class="text-center p-7 bg-card border border-border rounded-xl">
+          <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm inline-flex items-center justify-center mb-3.5">2</div>
+          <div class="font-bold text-[0.9rem] mb-1.5">Ask the AI to build</div>
+          <div class="text-[0.82rem] text-muted-foreground leading-snug">Prompt as usual — the agent now has access to CleanSlice docs and conventions.</div>
         </div>
-        <div class="step">
-          <div class="step-num">3</div>
-          <div class="step-title">Get clean output</div>
-          <div class="step-text">Code follows slice architecture, naming rules, and project structure automatically.</div>
+        <div class="text-center p-7 bg-card border border-border rounded-xl">
+          <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm inline-flex items-center justify-center mb-3.5">3</div>
+          <div class="font-bold text-[0.9rem] mb-1.5">Get clean output</div>
+          <div class="text-[0.82rem] text-muted-foreground leading-snug">Code follows slice architecture, naming rules, and project structure automatically.</div>
         </div>
       </div>
     </section>
 
-    <div class="divider"></div>
+    <div class="w-full h-px bg-border"></div>
 
     <!-- Install -->
-    <section id="install">
-      <div class="section-label">Quick setup</div>
-      <div class="section-title">Install in your editor</div>
-      <p class="section-desc">Click your editor below for copy-paste config.</p>
+    <section id="install" class="py-12">
+      <div class="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-primary mb-2">Quick setup</div>
+      <h2 class="text-2xl font-bold tracking-tight mb-1.5">Install in your editor</h2>
+      <p class="text-muted-foreground text-[0.92rem] mb-7">Click your editor below for copy-paste config.</p>
 
-      <div class="install-grid" id="installGrid">
+      <div class="grid grid-cols-2 max-sm:grid-cols-1 gap-3" id="installGrid">
 
-        <div class="install-card" data-editor="cursor">
-          <div class="install-card-head">
-            <div class="install-card-icon" style="background: #1e1e2e;">
+        <div class="install-card bg-card border border-border rounded-xl p-5 cursor-pointer transition-all duration-200 relative overflow-hidden hover:border-[#3A5A6A] hover:bg-muted hover:-translate-y-px" data-editor="cursor">
+          <div class="flex items-center gap-3 mb-1">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background: #1E3442;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 3l14 9-14 9V3z" fill="#00d4aa"/></svg>
             </div>
             <div>
-              <div class="install-card-name">Cursor</div>
-              <div class="install-card-hint">~/.cursor/mcp.json</div>
+              <div class="font-bold text-[0.95rem]">Cursor</div>
+              <div class="text-[0.78rem] text-[#6E8796] mt-0.5">~/.cursor/mcp.json</div>
             </div>
           </div>
-          <span class="arrow">→</span>
+          <span class="absolute right-[18px] top-1/2 -translate-y-1/2 text-[#6E8796] text-sm transition-all duration-200">→</span>
         </div>
 
-        <div class="install-card" data-editor="claude-code">
-          <div class="install-card-head">
-            <div class="install-card-icon" style="background: #1a1510;">
+        <div class="install-card bg-card border border-border rounded-xl p-5 cursor-pointer transition-all duration-200 relative overflow-hidden hover:border-[#3A5A6A] hover:bg-muted hover:-translate-y-px" data-editor="claude-code">
+          <div class="flex items-center gap-3 mb-1">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background: #2A1F18;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#d4a574"/></svg>
             </div>
             <div>
-              <div class="install-card-name">Claude Code</div>
-              <div class="install-card-hint">One command</div>
+              <div class="font-bold text-[0.95rem]">Claude Code</div>
+              <div class="text-[0.78rem] text-[#6E8796] mt-0.5">One command</div>
             </div>
           </div>
-          <span class="arrow">→</span>
+          <span class="absolute right-[18px] top-1/2 -translate-y-1/2 text-[#6E8796] text-sm transition-all duration-200">→</span>
         </div>
 
-        <div class="install-card" data-editor="vscode">
-          <div class="install-card-head">
-            <div class="install-card-icon" style="background: #1a2333;">
+        <div class="install-card bg-card border border-border rounded-xl p-5 cursor-pointer transition-all duration-200 relative overflow-hidden hover:border-[#3A5A6A] hover:bg-muted hover:-translate-y-px" data-editor="vscode">
+          <div class="flex items-center gap-3 mb-1">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background: #162433;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M17 2L7 12l10 10 5-3V5l-5-3zM2 12l5-4.5v9L2 12z" fill="#4da6ff"/></svg>
             </div>
             <div>
-              <div class="install-card-name">VS Code</div>
-              <div class="install-card-hint">.vscode/mcp.json</div>
+              <div class="font-bold text-[0.95rem]">VS Code</div>
+              <div class="text-[0.78rem] text-[#6E8796] mt-0.5">.vscode/mcp.json</div>
             </div>
           </div>
-          <span class="arrow">→</span>
+          <span class="absolute right-[18px] top-1/2 -translate-y-1/2 text-[#6E8796] text-sm transition-all duration-200">→</span>
         </div>
 
-        <div class="install-card" data-editor="windsurf">
-          <div class="install-card-head">
-            <div class="install-card-icon" style="background: #161830;">
+        <div class="install-card bg-card border border-border rounded-xl p-5 cursor-pointer transition-all duration-200 relative overflow-hidden hover:border-[#3A5A6A] hover:bg-muted hover:-translate-y-px" data-editor="windsurf">
+          <div class="flex items-center gap-3 mb-1">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background: #162030;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 17c3-4 6-4 9 0s6 4 9 0" stroke="#7c8cff" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
             </div>
             <div>
-              <div class="install-card-name">Windsurf</div>
-              <div class="install-card-hint">MCP config file</div>
+              <div class="font-bold text-[0.95rem]">Windsurf</div>
+              <div class="text-[0.78rem] text-[#6E8796] mt-0.5">MCP config file</div>
             </div>
           </div>
-          <span class="arrow">→</span>
+          <span class="absolute right-[18px] top-1/2 -translate-y-1/2 text-[#6E8796] text-sm transition-all duration-200">→</span>
         </div>
 
-        <div class="install-card" data-editor="claude-desktop">
-          <div class="install-card-head">
-            <div class="install-card-icon" style="background: #1a1510;">
+        <div class="install-card bg-card border border-border rounded-xl p-5 cursor-pointer transition-all duration-200 relative overflow-hidden hover:border-[#3A5A6A] hover:bg-muted hover:-translate-y-px" data-editor="claude-desktop">
+          <div class="flex items-center gap-3 mb-1">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background: #2A1F18;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="14" rx="3" stroke="#d4a574" stroke-width="2" fill="none"/><path d="M8 22h8" stroke="#d4a574" stroke-width="2" stroke-linecap="round"/></svg>
             </div>
             <div>
-              <div class="install-card-name">Claude Desktop</div>
-              <div class="install-card-hint">claude_desktop_config.json</div>
+              <div class="font-bold text-[0.95rem]">Claude Desktop</div>
+              <div class="text-[0.78rem] text-[#6E8796] mt-0.5">claude_desktop_config.json</div>
             </div>
           </div>
-          <span class="arrow">→</span>
+          <span class="absolute right-[18px] top-1/2 -translate-y-1/2 text-[#6E8796] text-sm transition-all duration-200">→</span>
         </div>
 
-        <div class="install-card" data-editor="opencode">
-          <div class="install-card-head">
-            <div class="install-card-icon" style="background: #1a2a1a;">
+        <div class="install-card bg-card border border-border rounded-xl p-5 cursor-pointer transition-all duration-200 relative overflow-hidden hover:border-[#3A5A6A] hover:bg-muted hover:-translate-y-px" data-editor="opencode">
+          <div class="flex items-center gap-3 mb-1">
+            <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background: #1A2E22;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke="#55cc55" stroke-width="1.5" stroke-linecap="round"/></svg>
             </div>
             <div>
-              <div class="install-card-name">Opencode</div>
-              <div class="install-card-hint">Opencode config</div>
+              <div class="font-bold text-[0.95rem]">Opencode</div>
+              <div class="text-[0.78rem] text-[#6E8796] mt-0.5">Opencode config</div>
             </div>
           </div>
-          <span class="arrow">→</span>
+          <span class="absolute right-[18px] top-1/2 -translate-y-1/2 text-[#6E8796] text-sm transition-all duration-200">→</span>
         </div>
 
         <!-- Config panels inserted dynamically -->
       </div>
 
       <!-- MCP Endpoint -->
-      <div class="endpoint-bar">
-        <span class="endpoint-label">Endpoint</span>
-        <span class="endpoint-url">https://mcp.cleanslice.org/mcp</span>
-        <button class="endpoint-copy" onclick="copyText('https://mcp.cleanslice.org/mcp', this)">Copy</button>
+      <div class="flex items-center gap-3 bg-card border border-border rounded-[10px] px-[18px] py-3.5 mt-7">
+        <span class="text-[0.72rem] font-bold uppercase tracking-widest text-[#6E8796] whitespace-nowrap">Endpoint</span>
+        <span class="font-mono text-[0.88rem] text-primary flex-1 overflow-hidden text-ellipsis whitespace-nowrap">https://mcp.cleanslice.org/mcp</span>
+        <button class="endpoint-copy bg-transparent border border-border text-muted-foreground font-semibold text-xs py-1 px-3.5 rounded-md cursor-pointer transition-all duration-150 whitespace-nowrap hover:text-foreground hover:border-[#3A5A6A]" onclick="copyText('https://mcp.cleanslice.org/mcp', this)">Copy</button>
       </div>
     </section>
 
-    <div class="divider"></div>
+    <div class="w-full h-px bg-border"></div>
 
     <!-- Available Tools -->
-    <section>
-      <div class="section-label">Capabilities</div>
-      <div class="section-title">What your AI gets access to</div>
-      <p class="section-desc">Three tools that turn any MCP-compatible agent into a CleanSlice expert.</p>
+    <section class="py-12">
+      <div class="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-primary mb-2">Capabilities</div>
+      <h2 class="text-2xl font-bold tracking-tight mb-1.5">What your AI gets access to</h2>
+      <p class="text-muted-foreground text-[0.92rem] mb-7">Three tools that turn any MCP-compatible agent into a CleanSlice expert.</p>
 
-      <div class="tools-list">
-        <div class="tool-item">
-          <div class="tool-icon">⚡</div>
+      <div class="flex flex-col gap-2.5">
+        <div class="flex items-start gap-4 p-5 bg-card border border-border rounded-xl transition-colors hover:border-[#3A5A6A]">
+          <div class="w-10 h-10 bg-primary/10 rounded-[10px] flex items-center justify-center shrink-0 text-lg">⚡</div>
           <div>
-            <div class="tool-name">get-started</div>
-            <div class="tool-desc">Returns the essential CleanSlice rules and naming conventions. The AI calls this first to understand how to structure your project — slices, layers, file placement, and the critical singular-naming rule.</div>
+            <div class="font-mono font-semibold text-[0.88rem] text-primary mb-0.5">get-started</div>
+            <div class="text-[0.85rem] text-muted-foreground leading-snug">Returns the essential CleanSlice rules and naming conventions. The AI calls this first to understand how to structure your project — slices, layers, file placement, and the critical singular-naming rule.</div>
           </div>
         </div>
-        <div class="tool-item">
-          <div class="tool-icon">📂</div>
+        <div class="flex items-start gap-4 p-5 bg-card border border-border rounded-xl transition-colors hover:border-[#3A5A6A]">
+          <div class="w-10 h-10 bg-primary/10 rounded-[10px] flex items-center justify-center shrink-0 text-lg">📂</div>
           <div>
-            <div class="tool-name">list-categories</div>
-            <div class="tool-desc">Lists all available documentation categories (quickstart, patterns, best practices, etc.) so the AI knows what deeper knowledge is available before diving in.</div>
+            <div class="font-mono font-semibold text-[0.88rem] text-primary mb-0.5">list-categories</div>
+            <div class="text-[0.85rem] text-muted-foreground leading-snug">Lists all available documentation categories (quickstart, patterns, best practices, etc.) so the AI knows what deeper knowledge is available before diving in.</div>
           </div>
         </div>
-        <div class="tool-item">
-          <div class="tool-icon">🔍</div>
+        <div class="flex items-start gap-4 p-5 bg-card border border-border rounded-xl transition-colors hover:border-[#3A5A6A]">
+          <div class="w-10 h-10 bg-primary/10 rounded-[10px] flex items-center justify-center shrink-0 text-lg">🔍</div>
           <div>
-            <div class="tool-name">search</div>
-            <div class="tool-desc">Full-text search across docs — filterable by query, framework (NestJS, Nuxt), development phase, feature name, category, or tags. The AI uses this to find exactly the right pattern for your use case.</div>
+            <div class="font-mono font-semibold text-[0.88rem] text-primary mb-0.5">search</div>
+            <div class="text-[0.85rem] text-muted-foreground leading-snug">Full-text search across docs — filterable by query, framework (NestJS, Nuxt), development phase, feature name, category, or tags. The AI uses this to find exactly the right pattern for your use case.</div>
           </div>
         </div>
       </div>
     </section>
 
-    <div class="divider"></div>
+    <div class="w-full h-px bg-border"></div>
 
     <!-- Self-host / Docker -->
-    <section>
-      <div class="section-label">Advanced</div>
-      <div class="section-title">Self-host or run locally</div>
-      <p class="section-desc">Clone the repo to run your own instance or customize documentation.</p>
+    <section class="py-12">
+      <div class="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-primary mb-2">Advanced</div>
+      <h2 class="text-2xl font-bold tracking-tight mb-1.5">Self-host or run locally</h2>
+      <p class="text-muted-foreground text-[0.92rem] mb-7">Clone the repo to run your own instance or customize documentation.</p>
 
-      <div class="code-block">
-        <div class="code-block-header">
-          <span class="code-lang">bash</span>
-          <button class="copy-btn" onclick="copyCode(this)">
+      <div class="code-block bg-muted border border-border rounded-[10px] overflow-hidden">
+        <div class="flex items-center justify-between px-4 py-2.5 border-b border-border bg-white/[0.01]">
+          <span class="font-mono text-[0.72rem] font-medium text-[#6E8796] uppercase tracking-wide">bash</span>
+          <button class="copy-btn bg-transparent border border-border text-muted-foreground font-semibold text-xs py-1 px-3 rounded-md cursor-pointer transition-all duration-150 flex items-center gap-1.5 hover:text-foreground hover:border-[#3A5A6A]" onclick="copyCode(this)">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
             Copy
           </button>
         </div>
-        <pre><span class="comment"># Clone and run locally</span>
+        <pre class="p-4 overflow-x-auto font-mono text-[0.82rem] leading-relaxed text-muted-foreground"><span class="text-[#6E8796]"># Clone and run locally</span>
 git clone https://github.com/CleanSlice/mcp.git
 cd mcp
 npm install
 npm run dev
 
-<span class="comment"># Or use Docker</span>
+<span class="text-[#6E8796]"># Or use Docker</span>
 docker build -t cleanslice-mcp .
 docker run -p 8080:8080 cleanslice-mcp</pre>
       </div>
@@ -902,18 +325,18 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
   </div>
 
   <!-- Footer -->
-  <footer>
-    <div class="container">
-      <div class="footer-inner">
-        <div class="footer-brand">
-          <div class="mini-logo">CS</div>
+  <footer class="pt-12 pb-10 border-t border-border mt-8">
+    <div class="max-w-[860px] mx-auto px-6">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div class="flex items-center gap-2.5 font-bold text-[0.9rem] text-muted-foreground">
+          <div class="w-7 h-7 bg-gradient-to-br from-primary to-[#4FA3D1] rounded-[7px] flex items-center justify-center font-extrabold text-[11px] text-white">CS</div>
           CleanSlice
         </div>
-        <div class="footer-links">
-          <a href="/health">Health</a>
-          <a href="/api">API Docs</a>
-          <a href="https://github.com/CleanSlice/mcp" target="_blank" rel="noopener">GitHub</a>
-          <a href="https://cleanslice.org" target="_blank" rel="noopener">Website</a>
+        <div class="flex gap-6">
+          <a href="/health" class="text-[#6E8796] no-underline text-[0.82rem] font-medium transition-colors hover:text-foreground">Health</a>
+          <a href="/api" class="text-[#6E8796] no-underline text-[0.82rem] font-medium transition-colors hover:text-foreground">API Docs</a>
+          <a href="https://github.com/CleanSlice/mcp" target="_blank" rel="noopener" class="text-[#6E8796] no-underline text-[0.82rem] font-medium transition-colors hover:text-foreground">GitHub</a>
+          <a href="https://cleanslice.org" target="_blank" rel="noopener" class="text-[#6E8796] no-underline text-[0.82rem] font-medium transition-colors hover:text-foreground">Website</a>
         </div>
       </div>
     </div>
@@ -922,14 +345,14 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
   <script>
     // Hero install copy
     document.getElementById('heroInstallBtn').addEventListener('click', function() {
-      const cmd = document.querySelector('.hero-install-cmd').value;
+      const cmd = document.querySelector('#heroInstall input').value;
       const btn = this;
       navigator.clipboard.writeText(cmd).then(() => {
         btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied!';
-        btn.classList.add('copied');
+        btn.style.color = '#5CC6D6';
         setTimeout(() => {
           btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy';
-          btn.classList.remove('copied');
+          btn.style.color = '';
         }, 2000);
       });
     });
@@ -938,7 +361,7 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
     const configs = {
       cursor: {
         title: 'Cursor',
-        steps: `<p class="config-step">Open <strong>Settings → Cursor Settings → MCP → Add new global MCP server</strong>, or paste into <code>~/.cursor/mcp.json</code>. <a href="https://docs.cursor.com/context/model-context-protocol" target="_blank" rel="noopener">Docs ↗</a></p>`,
+        steps: `<p class="text-[0.85rem] text-muted-foreground mb-3 leading-relaxed">Open <strong class="text-foreground">Settings → Cursor Settings → MCP → Add new global MCP server</strong>, or paste into <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-[0.8rem] text-primary">~/.cursor/mcp.json</code>. <a href="https://docs.cursor.com/context/model-context-protocol" target="_blank" rel="noopener" class="text-primary no-underline hover:underline">Docs ↗</a></p>`,
         lang: 'json',
         code: `{
   "mcpServers": {
@@ -951,13 +374,13 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
       },
       'claude-code': {
         title: 'Claude Code',
-        steps: `<p class="config-step">Run this in your terminal. <a href="https://docs.anthropic.com/en/docs/claude-code/mcp" target="_blank" rel="noopener">Docs ↗</a></p>`,
+        steps: `<p class="text-[0.85rem] text-muted-foreground mb-3 leading-relaxed">Run this in your terminal. <a href="https://docs.anthropic.com/en/docs/claude-code/mcp" target="_blank" rel="noopener" class="text-primary no-underline hover:underline">Docs ↗</a></p>`,
         lang: 'bash',
         code: `claude mcp add --scope user --transport http cleanslice https://mcp.cleanslice.org/mcp`
       },
       vscode: {
         title: 'VS Code (Copilot)',
-        steps: `<p class="config-step">Add to <code>.vscode/mcp.json</code> in your project. <a href="https://code.visualstudio.com/docs/copilot/chat/mcp-servers" target="_blank" rel="noopener">Docs ↗</a></p>`,
+        steps: `<p class="text-[0.85rem] text-muted-foreground mb-3 leading-relaxed">Add to <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-[0.8rem] text-primary">.vscode/mcp.json</code> in your project. <a href="https://code.visualstudio.com/docs/copilot/chat/mcp-servers" target="_blank" rel="noopener" class="text-primary no-underline hover:underline">Docs ↗</a></p>`,
         lang: 'json',
         code: `{
   "servers": {
@@ -970,7 +393,7 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
       },
       windsurf: {
         title: 'Windsurf',
-        steps: `<p class="config-step">Add to your Windsurf MCP config file. <a href="https://docs.windsurf.com/windsurf/mcp" target="_blank" rel="noopener">Docs ↗</a></p>`,
+        steps: `<p class="text-[0.85rem] text-muted-foreground mb-3 leading-relaxed">Add to your Windsurf MCP config file. <a href="https://docs.windsurf.com/windsurf/mcp" target="_blank" rel="noopener" class="text-primary no-underline hover:underline">Docs ↗</a></p>`,
         lang: 'json',
         code: `{
   "mcpServers": {
@@ -983,7 +406,7 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
       },
       'claude-desktop': {
         title: 'Claude Desktop',
-        steps: `<p class="config-step">Add to your <code>claude_desktop_config.json</code>. <a href="https://modelcontextprotocol.io/quickstart/user" target="_blank" rel="noopener">Docs ↗</a></p>`,
+        steps: `<p class="text-[0.85rem] text-muted-foreground mb-3 leading-relaxed">Add to your <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-[0.8rem] text-primary">claude_desktop_config.json</code>. <a href="https://modelcontextprotocol.io/quickstart/user" target="_blank" rel="noopener" class="text-primary no-underline hover:underline">Docs ↗</a></p>`,
         lang: 'json',
         code: `{
   "mcpServers": {
@@ -996,7 +419,7 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
       },
       opencode: {
         title: 'Opencode',
-        steps: `<p class="config-step">Add to your Opencode configuration file. <a href="https://opencode.ai/docs/mcp-servers" target="_blank" rel="noopener">Docs ↗</a></p>`,
+        steps: `<p class="text-[0.85rem] text-muted-foreground mb-3 leading-relaxed">Add to your Opencode configuration file. <a href="https://opencode.ai/docs/mcp-servers" target="_blank" rel="noopener" class="text-primary no-underline hover:underline">Docs ↗</a></p>`,
         lang: 'json',
         code: `{
   "mcp": {
@@ -1030,22 +453,22 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
 
         const cfg = configs[editor];
         const panel = document.createElement('div');
-        panel.className = 'config-panel active';
+        panel.className = 'config-panel active col-span-full bg-card border border-border rounded-xl p-6';
         panel.innerHTML = `
-          <div class="config-panel-header">
-            <span class="config-panel-title">${cfg.title}</span>
-            <button class="config-close" onclick="this.closest('.config-panel').remove(); activePanel=null;">✕</button>
+          <div class="flex items-center justify-between mb-4">
+            <span class="font-bold text-[0.95rem]">${cfg.title}</span>
+            <button class="bg-transparent border-none text-[#6E8796] cursor-pointer text-lg px-2 py-1 rounded-md transition-all hover:text-foreground hover:bg-muted" onclick="this.closest('.config-panel').remove(); activePanel=null;">✕</button>
           </div>
           ${cfg.steps}
-          <div class="code-block">
-            <div class="code-block-header">
-              <span class="code-lang">${cfg.lang}</span>
-              <button class="copy-btn" onclick="copyCode(this)">
+          <div class="code-block bg-muted border border-border rounded-[10px] overflow-hidden">
+            <div class="flex items-center justify-between px-4 py-2.5 border-b border-border bg-white/[0.01]">
+              <span class="font-mono text-[0.72rem] font-medium text-[#6E8796] uppercase tracking-wide">${cfg.lang}</span>
+              <button class="copy-btn bg-transparent border border-border text-muted-foreground font-semibold text-xs py-1 px-3 rounded-md cursor-pointer transition-all duration-150 flex items-center gap-1.5 hover:text-foreground hover:border-[#3A5A6A]" onclick="copyCode(this)">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                 Copy
               </button>
             </div>
-            <pre>${escapeHtml(cfg.code)}</pre>
+            <pre class="p-4 overflow-x-auto font-mono text-[0.82rem] leading-relaxed text-muted-foreground">${escapeHtml(cfg.code)}</pre>
           </div>
         `;
 
@@ -1067,10 +490,10 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
       const pre = btn.closest('.code-block').querySelector('pre');
       navigator.clipboard.writeText(pre.textContent).then(() => {
         btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg> Copied!`;
-        btn.classList.add('copied');
+        btn.style.color = '#5CC6D6';
         setTimeout(() => {
           btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg> Copy`;
-          btn.classList.remove('copied');
+          btn.style.color = '';
         }, 2000);
       });
     }
@@ -1078,10 +501,10 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
     function copyText(text, btn) {
       navigator.clipboard.writeText(text).then(() => {
         btn.textContent = 'Copied!';
-        btn.classList.add('copied');
+        btn.style.color = '#5CC6D6';
         setTimeout(() => {
           btn.textContent = 'Copy';
-          btn.classList.remove('copied');
+          btn.style.color = '';
         }, 2000);
       });
     }
