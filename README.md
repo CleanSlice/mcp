@@ -17,9 +17,29 @@ claude mcp add --scope user --transport http cleanslice https://mcp.cleanslice.o
 
 > Remove `--scope user` to install for the current project only.
 
-**Tip: enforce MCP usage with a Stop hook**
+**Tip: enforce MCP usage with CLAUDE.md**
 
-To make sure Claude Code always consults the CleanSlice MCP before finishing a task, add the following to your project's `.claude/settings.json`:
+To make sure Claude Code always consults the CleanSlice MCP **before** writing any code, add the following to your project's `CLAUDE.md`:
+
+```markdown
+## CleanSlice MCP — Required
+
+Before writing or modifying any code you MUST consult the CleanSlice MCP:
+
+1. Call `get-started` to load the core architecture rules.
+2. Call `list-categories` to see available documentation areas.
+3. Call `search` with at least 2 task-relevant queries covering:
+   (a) core implementation details for the feature you are building,
+   (b) edge cases, constraints, or standards that apply.
+
+Do NOT guess conventions — always verify against MCP results first.
+```
+
+This ensures the agent reads CleanSlice docs at the start of every task, not after the fact.
+
+**Optional: add a Stop hook as a safety net**
+
+To catch cases where the agent skips the MCP despite the `CLAUDE.md` instruction, add this to `.claude/settings.json`:
 
 ```json
 {
@@ -38,8 +58,6 @@ To make sure Claude Code always consults the CleanSlice MCP before finishing a t
   }
 }
 ```
-
-This hook runs a verification agent every time Claude Code tries to stop, ensuring it actually consulted the CleanSlice docs rather than guessing.
 
 </details>
 
@@ -61,6 +79,30 @@ Paste the following into your Cursor `~/.cursor/mcp.json` file. You may also ins
 }
 ```
 
+**Tip: enforce MCP usage with a Cursor rule**
+
+Create `.cursor/rules/cleanslice.mdc` in your project to make Cursor always consult the MCP before writing code:
+
+```markdown
+---
+description: CleanSlice architecture rules
+globs: **/*.{ts,vue,prisma}
+alwaysApply: true
+---
+
+## CleanSlice MCP — Required
+
+Before writing or modifying any code you MUST consult the CleanSlice MCP:
+
+1. Call `get-started` to load the core architecture rules.
+2. Call `list-categories` to see available documentation areas.
+3. Call `search` with at least 2 task-relevant queries covering:
+   (a) core implementation details for the feature you are building,
+   (b) edge cases, constraints, or standards that apply.
+
+Do NOT guess conventions — always verify against MCP results first.
+```
+
 </details>
 
 <details>
@@ -79,6 +121,24 @@ Add to your Windsurf MCP config file. See [Windsurf MCP docs](https://docs.winds
 }
 ```
 
+**Tip: enforce MCP usage with a Windsurf rule**
+
+Create `.windsurf/rules/cleanslice.md` in your project to make Windsurf always consult the MCP before writing code:
+
+```markdown
+## CleanSlice MCP — Required
+
+Before writing or modifying any code you MUST consult the CleanSlice MCP:
+
+1. Call `get-started` to load the core architecture rules.
+2. Call `list-categories` to see available documentation areas.
+3. Call `search` with at least 2 task-relevant queries covering:
+   (a) core implementation details for the feature you are building,
+   (b) edge cases, constraints, or standards that apply.
+
+Do NOT guess conventions — always verify against MCP results first.
+```
+
 </details>
 
 <details>
@@ -95,6 +155,24 @@ Add to `.vscode/mcp.json` in your project. See [VS Code MCP docs](https://code.v
     }
   }
 }
+```
+
+**Tip: enforce MCP usage with Copilot instructions**
+
+Create `.github/copilot-instructions.md` in your project root to make Copilot always consult the MCP before writing code:
+
+```markdown
+## CleanSlice MCP — Required
+
+Before writing or modifying any code you MUST consult the CleanSlice MCP:
+
+1. Call `get-started` to load the core architecture rules.
+2. Call `list-categories` to see available documentation areas.
+3. Call `search` with at least 2 task-relevant queries covering:
+   (a) core implementation details for the feature you are building,
+   (b) edge cases, constraints, or standards that apply.
+
+Do NOT guess conventions — always verify against MCP results first.
 ```
 
 </details>
@@ -132,6 +210,24 @@ Add this to your Opencode configuration file. See [Opencode MCP docs](https://op
     }
   }
 }
+```
+
+**Tip: enforce MCP usage with AGENTS.md**
+
+Create `AGENTS.md` in your project root to make Opencode always consult the MCP before writing code:
+
+```markdown
+## CleanSlice MCP — Required
+
+Before writing or modifying any code you MUST consult the CleanSlice MCP:
+
+1. Call `get-started` to load the core architecture rules.
+2. Call `list-categories` to see available documentation areas.
+3. Call `search` with at least 2 task-relevant queries covering:
+   (a) core implementation details for the feature you are building,
+   (b) edge cases, constraints, or standards that apply.
+
+Do NOT guess conventions — always verify against MCP results first.
 ```
 
 </details>

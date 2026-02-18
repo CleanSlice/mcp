@@ -370,7 +370,29 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
       "url": "https://mcp.cleanslice.org/mcp"
     }
   }
-}`
+}`,
+        tip: {
+          title: 'Tip: enforce MCP usage with a Cursor rule',
+          description: 'Create <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-[0.8rem] text-primary">.cursor/rules/cleanslice.mdc</code> in your project to make Cursor always consult the MCP before writing code.',
+          lang: 'markdown',
+          code: `---
+description: CleanSlice architecture rules
+globs: **/*.{ts,vue,prisma}
+alwaysApply: true
+---
+
+## CleanSlice MCP — Required
+
+Before writing or modifying any code you MUST consult the CleanSlice MCP:
+
+1. Call \`get-started\` to load the core architecture rules.
+2. Call \`list-categories\` to see available documentation areas.
+3. Call \`search\` with at least 2 task-relevant queries covering:
+   (a) core implementation details for the feature you are building,
+   (b) edge cases, constraints, or standards that apply.
+
+Do NOT guess conventions — always verify against MCP results first.`
+        }
       },
       'claude-code': {
         title: 'Claude Code',
@@ -378,8 +400,24 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
         lang: 'bash',
         code: `claude mcp add --scope user --transport http cleanslice https://mcp.cleanslice.org/mcp`,
         tip: {
-          title: 'Tip: enforce MCP usage with a Stop hook',
-          description: 'To make sure Claude Code always consults the CleanSlice MCP before finishing a task, add the following to your project\u2019s <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-[0.8rem] text-primary">.claude/settings.json</code>. This runs a verification agent every time Claude Code tries to stop, ensuring it actually consulted the docs rather than guessing.',
+          title: 'Tip: enforce MCP usage with CLAUDE.md',
+          description: 'To make sure Claude Code always consults the CleanSlice MCP <strong>before</strong> writing any code, add the following to your project\u2019s <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-[0.8rem] text-primary">CLAUDE.md</code>. This ensures the agent reads docs at the start of every task, not after the fact.',
+          lang: 'markdown',
+          code: `## CleanSlice MCP — Required
+
+Before writing or modifying any code you MUST consult the CleanSlice MCP:
+
+1. Call \`get-started\` to load the core architecture rules.
+2. Call \`list-categories\` to see available documentation areas.
+3. Call \`search\` with at least 2 task-relevant queries covering:
+   (a) core implementation details for the feature you are building,
+   (b) edge cases, constraints, or standards that apply.
+
+Do NOT guess conventions — always verify against MCP results first.`
+        },
+        tip2: {
+          title: 'Optional: add a Stop hook as a safety net',
+          description: 'To catch cases where the agent skips the MCP despite the <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-[0.8rem] text-primary">CLAUDE.md</code> instruction, add this to <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-[0.8rem] text-primary">.claude/settings.json</code>.',
           lang: 'json',
           code: `{
   "hooks": {
@@ -409,7 +447,23 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
       "url": "https://mcp.cleanslice.org/mcp"
     }
   }
-}`
+}`,
+        tip: {
+          title: 'Tip: enforce MCP usage with Copilot instructions',
+          description: 'Create <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-[0.8rem] text-primary">.github/copilot-instructions.md</code> in your project root to make Copilot always consult the MCP before writing code.',
+          lang: 'markdown',
+          code: `## CleanSlice MCP — Required
+
+Before writing or modifying any code you MUST consult the CleanSlice MCP:
+
+1. Call \`get-started\` to load the core architecture rules.
+2. Call \`list-categories\` to see available documentation areas.
+3. Call \`search\` with at least 2 task-relevant queries covering:
+   (a) core implementation details for the feature you are building,
+   (b) edge cases, constraints, or standards that apply.
+
+Do NOT guess conventions — always verify against MCP results first.`
+        }
       },
       windsurf: {
         title: 'Windsurf',
@@ -422,7 +476,23 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
       "serverUrl": "https://mcp.cleanslice.org/mcp"
     }
   }
-}`
+}`,
+        tip: {
+          title: 'Tip: enforce MCP usage with a Windsurf rule',
+          description: 'Create <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-[0.8rem] text-primary">.windsurf/rules/cleanslice.md</code> in your project to make Windsurf always consult the MCP before writing code.',
+          lang: 'markdown',
+          code: `## CleanSlice MCP — Required
+
+Before writing or modifying any code you MUST consult the CleanSlice MCP:
+
+1. Call \`get-started\` to load the core architecture rules.
+2. Call \`list-categories\` to see available documentation areas.
+3. Call \`search\` with at least 2 task-relevant queries covering:
+   (a) core implementation details for the feature you are building,
+   (b) edge cases, constraints, or standards that apply.
+
+Do NOT guess conventions — always verify against MCP results first.`
+        }
       },
       'claude-desktop': {
         title: 'Claude Desktop',
@@ -449,7 +519,23 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
       "enabled": true
     }
   }
-}`
+}`,
+        tip: {
+          title: 'Tip: enforce MCP usage with AGENTS.md',
+          description: 'Create <code class="bg-muted px-1.5 py-0.5 rounded font-mono text-[0.8rem] text-primary">AGENTS.md</code> in your project root to make Opencode always consult the MCP before writing code.',
+          lang: 'markdown',
+          code: `## CleanSlice MCP — Required
+
+Before writing or modifying any code you MUST consult the CleanSlice MCP:
+
+1. Call \`get-started\` to load the core architecture rules.
+2. Call \`list-categories\` to see available documentation areas.
+3. Call \`search\` with at least 2 task-relevant queries covering:
+   (a) core implementation details for the feature you are building,
+   (b) edge cases, constraints, or standards that apply.
+
+Do NOT guess conventions — always verify against MCP results first.`
+        }
       }
     };
 
@@ -474,22 +560,25 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
         const cfg = configs[editor];
         const panel = document.createElement('div');
         panel.className = 'config-panel active col-span-full bg-card border border-border rounded-xl p-6';
-        const tipHtml = cfg.tip ? `
+        function renderTipBlock(tip) {
+          if (!tip) return '';
+          return `
           <div class="mt-6 p-5 bg-primary/5 border border-primary/15 rounded-xl">
-            <div class="font-bold text-[0.9rem] text-primary mb-2">${cfg.tip.title}</div>
-            <p class="text-[0.85rem] text-muted-foreground mb-3 leading-relaxed">${cfg.tip.description}</p>
+            <div class="font-bold text-[0.9rem] text-primary mb-2">${tip.title}</div>
+            <p class="text-[0.85rem] text-muted-foreground mb-3 leading-relaxed">${tip.description}</p>
             <div class="code-block bg-muted border border-border rounded-[10px] overflow-hidden">
               <div class="flex items-center justify-between px-4 py-2.5 border-b border-border bg-white/[0.01]">
-                <span class="font-mono text-[0.72rem] font-medium text-[#6E8796] uppercase tracking-wide">${cfg.tip.lang}</span>
+                <span class="font-mono text-[0.72rem] font-medium text-[#6E8796] uppercase tracking-wide">${tip.lang}</span>
                 <button class="copy-btn bg-transparent border border-border text-muted-foreground font-semibold text-xs py-1 px-3 rounded-md cursor-pointer transition-all duration-150 flex items-center gap-1.5 hover:text-foreground hover:border-[#3A5A6A]" onclick="copyCode(this)">
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
                   Copy
                 </button>
               </div>
-              <pre class="p-4 overflow-x-auto font-mono text-[0.82rem] leading-relaxed text-muted-foreground">${escapeHtml(cfg.tip.code)}</pre>
+              <pre class="p-4 overflow-x-auto font-mono text-[0.82rem] leading-relaxed text-muted-foreground">${escapeHtml(tip.code)}</pre>
             </div>
-          </div>
-        ` : '';
+          </div>`;
+        }
+        const tipHtml = renderTipBlock(cfg.tip) + renderTipBlock(cfg.tip2);
 
         panel.innerHTML = `
           <div class="flex items-center justify-between mb-4">
