@@ -14,7 +14,7 @@ import { IDocumentSearchQuery } from '../docs/docs.repository';
 export interface IGitHubDocumentSearchResult {
   name: string;
   path: string;
-  content: string;
+  snippets: string[];
   description?: string;
   category?: string;
   tags?: string[];
@@ -31,6 +31,8 @@ export interface IGitHubDocumentSearchResult {
 @Injectable()
 export class GitHubRepository {
   private readonly supportedFrameworks = ['nestjs', 'nuxt'];
+  private static readonly MAX_SNIPPETS = 3;
+  private static readonly SNIPPET_WINDOW = 150;
 
   constructor(private readonly githubLoader: GitHubLoader) {}
 
@@ -166,10 +168,11 @@ export class GitHubRepository {
       if (score > 0) {
         const content = await this.githubLoader.loadDocument(doc.path);
         if (content) {
+          const snippets = this.extractSnippets(content, content.toLowerCase(), query.query);
           results.push({
             name: doc.name,
             path: doc.path,
-            content,
+            snippets,
             description: doc.description,
             category: doc.category,
             tags: doc.tags,
@@ -182,5 +185,88 @@ export class GitHubRepository {
 
     // Sort by relevance score
     return results.sort((a, b) => b.relevanceScore - a.relevanceScore);
+  }
+
+  /**
+   * Extract keyword-in-context snippets from document content
+   */
+  private extractSnippets(content: string, contentLower: string, query?: string): string[] {
+    if (!query) {
+      return [this.getFirstParagraphSnippet(content)];
+    }
+
+    const queryLower = query.toLowerCase().trim();
+    const queryWords = queryLower.split(/\s+/).filter((w) => w.length > 0);
+    const window = GitHubRepository.SNIPPET_WINDOW;
+    const ranges: Array<{ start: number; end: number }> = [];
+
+    const terms = contentLower.includes(queryLower)
+      ? [queryLower]
+      : queryWords;
+
+    for (const term of terms) {
+      let pos = 0;
+      while (pos < contentLower.length && ranges.length < 10) {
+        const idx = contentLower.indexOf(term, pos);
+        if (idx === -1) break;
+        const start = Math.max(0, idx - window);
+        const end = Math.min(content.length, idx + term.length + window);
+        ranges.push({ start, end });
+        pos = idx + term.length;
+      }
+    }
+
+    if (ranges.length === 0) {
+      return [this.getFirstParagraphSnippet(content)];
+    }
+
+    ranges.sort((a, b) => a.start - b.start);
+    const merged: Array<{ start: number; end: number }> = [ranges[0]];
+    for (let i = 1; i < ranges.length; i++) {
+      const last = merged[merged.length - 1];
+      if (ranges[i].start <= last.end) {
+        last.end = Math.max(last.end, ranges[i].end);
+      } else {
+        merged.push(ranges[i]);
+      }
+    }
+
+    return merged.slice(0, GitHubRepository.MAX_SNIPPETS).map(({ start, end }) => {
+      let text = content.slice(start, end);
+      if (start > 0) {
+        const firstNewline = text.indexOf('\n');
+        if (firstNewline !== -1 && firstNewline < window * 0.3) {
+          text = text.slice(firstNewline + 1);
+        } else {
+          text = '...' + text;
+        }
+      }
+      if (end < content.length) {
+        const lastNewline = text.lastIndexOf('\n');
+        if (lastNewline !== -1 && lastNewline > text.length * 0.7) {
+          text = text.slice(0, lastNewline);
+        } else {
+          text = text + '...';
+        }
+      }
+      return text.trim();
+    });
+  }
+
+  private getFirstParagraphSnippet(content: string): string {
+    const withoutFrontmatter = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
+    const lines = withoutFrontmatter.split('\n');
+    let snippet = '';
+    let started = false;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!started) {
+        if (trimmed.startsWith('#') || trimmed === '') continue;
+        started = true;
+      }
+      if (started && (trimmed === '' || trimmed.startsWith('#'))) break;
+      snippet += (snippet ? ' ' : '') + trimmed;
+    }
+    return snippet.length > 300 ? snippet.slice(0, 300) + '...' : snippet;
   }
 }

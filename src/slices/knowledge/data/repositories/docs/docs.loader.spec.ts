@@ -140,8 +140,7 @@ describe('DocsLoader', () => {
       expect(result).toBeNull();
     });
 
-    it('should return null and log error when file read fails', () => {
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    it('should return null when file read fails', () => {
       mockExistsSync.mockReturnValue(true);
       mockReadFileSync.mockImplementation(() => {
         throw new Error('Read error');
@@ -150,9 +149,6 @@ describe('DocsLoader', () => {
       const result = loader.loadDocument('error.md');
 
       expect(result).toBeNull();
-      expect(consoleSpy).toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
     });
   });
 

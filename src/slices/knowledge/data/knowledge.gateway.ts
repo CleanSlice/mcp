@@ -3,10 +3,12 @@
 // @layer:data
 // @type:gateway
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { IKnowledgeGateway, IDocumentSearchQuery, IPaginatedSearchResult } from '../domain/knowledge.gateway';
 import { DocsRepository } from './repositories/docs/docs.repository';
+import { DocsLoader } from './repositories/docs/docs.loader';
 import { GitHubRepository } from './repositories/github/github.repository';
+import { GitHubLoader } from './repositories/github/github.loader';
 import type { IDocumentSearchResult } from './repositories/docs/docs.repository';
 import { IFrameworkArchitectureData } from '../domain/knowledge.types';
 
@@ -18,9 +20,13 @@ import { IFrameworkArchitectureData } from '../domain/knowledge.types';
  */
 @Injectable()
 export class KnowledgeGateway implements IKnowledgeGateway {
+  private readonly logger = new Logger(KnowledgeGateway.name);
+
   constructor(
     private readonly docsRepository: DocsRepository,
-    private readonly githubRepository: GitHubRepository
+    private readonly docsLoader: DocsLoader,
+    private readonly githubRepository: GitHubRepository,
+    private readonly githubLoader: GitHubLoader,
   ) {}
 
   async getGettingStarted(): Promise<IFrameworkArchitectureData> {
@@ -37,10 +43,12 @@ export class KnowledgeGateway implements IKnowledgeGateway {
     );
 
     if (rulesDoc) {
+      // Load full content via readDocument (search only returns snippets)
+      const fullContent = await this.readDocument(rulesDoc.path);
       return {
         frameworkName: 'CleanSlice Architecture',
         documentation: {
-          overview: rulesDoc.content,
+          overview: fullContent || rulesDoc.snippets.join('\n\n'),
           whenToUse: '',
           checklist: '',
         },
@@ -65,7 +73,7 @@ export class KnowledgeGateway implements IKnowledgeGateway {
     const [localResults, githubResults] = await Promise.all([
       Promise.resolve(this.docsRepository.search(query)),
       this.githubRepository.search(query).catch((error) => {
-        console.warn('GitHubRepository search failed, using local only:', error.message);
+        this.logger.warn(`GitHubRepository search failed, using local only: ${error.message}`);
         return [];
       }),
     ]);
@@ -91,6 +99,27 @@ export class KnowledgeGateway implements IKnowledgeGateway {
     // Merge and deduplicate
     const allCategories = new Set([...localCategories, ...githubCategories]);
     return Array.from(allCategories).sort();
+  }
+
+  /**
+   * Read full document content by path
+   *
+   * Tries local docs first, falls back to GitHub.
+   */
+  async readDocument(path: string): Promise<string | null> {
+    // Try local first
+    const localContent = this.docsLoader.loadDocument(path);
+    if (localContent) {
+      return localContent;
+    }
+
+    // Fall back to GitHub
+    try {
+      return await this.githubLoader.loadDocument(path);
+    } catch (error) {
+      this.logger.warn(`Failed to load document from GitHub: ${path}`);
+      return null;
+    }
   }
 
   /**
@@ -143,9 +172,9 @@ export class KnowledgeGateway implements IKnowledgeGateway {
     results: IDocumentSearchResult[],
     frameworkName: string
   ): IFrameworkArchitectureData {
-    const overview = this.findContent(results, ['overview', 'slice-creation-rules']);
-    const whenToUse = this.findContent(results, ['when-to-use', 'overview']);
-    const checklist = this.findContent(results, ['checklist']);
+    const overview = this.findDocSnippets(results, ['overview', 'slice-creation-rules']);
+    const whenToUse = this.findDocSnippets(results, ['when-to-use', 'overview']);
+    const checklist = this.findDocSnippets(results, ['checklist']);
 
     return {
       frameworkName,
@@ -157,7 +186,7 @@ export class KnowledgeGateway implements IKnowledgeGateway {
     };
   }
 
-  private findContent(results: IDocumentSearchResult[], keywords: string[]): string | null {
+  private findDocSnippets(results: IDocumentSearchResult[], keywords: string[]): string | null {
     for (const keyword of keywords) {
       const doc = results.find(
         (r) =>
@@ -165,7 +194,7 @@ export class KnowledgeGateway implements IKnowledgeGateway {
           r.name.toLowerCase().includes(keyword.toLowerCase())
       );
       if (doc) {
-        return doc.content;
+        return doc.snippets.join('\n\n');
       }
     }
     return null;

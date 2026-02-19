@@ -3,7 +3,7 @@
 // @layer:data
 // @type:loader
 
-import { Injectable, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   IGitHubTreeResponse,
@@ -20,6 +20,7 @@ import {
  */
 @Injectable()
 export class GitHubLoader implements OnModuleInit {
+  private readonly logger = new Logger(GitHubLoader.name);
   private config: IGitHubLoaderConfig;
   private scannedDocuments: IGitHubScannedDocument[] = [];
   private contentCache: Map<string, ICacheEntry<string>> = new Map();
@@ -38,7 +39,7 @@ export class GitHubLoader implements OnModuleInit {
   async onModuleInit(): Promise<void> {
     // Initialize in background to not block startup
     this.initialize().catch((error) => {
-      console.warn('GitHubLoader: Failed to initialize, will retry on first request:', error.message);
+      this.logger.warn(`Failed to initialize, will retry on first request: ${error.message}`);
     });
   }
 
@@ -51,8 +52,9 @@ export class GitHubLoader implements OnModuleInit {
     try {
       await this.scanRepository();
       this.initialized = true;
+      this.logIndexStats();
     } catch (error) {
-      console.error('GitHubLoader: Initialization failed:', error);
+      this.logger.error('Initialization failed:', error);
       throw error;
     }
   }
@@ -102,7 +104,7 @@ export class GitHubLoader implements OnModuleInit {
       }
       return content;
     } catch (error) {
-      console.error(`GitHubLoader: Failed to load document ${path}:`, error);
+      this.logger.error(`Failed to load document ${path}:`, error);
       return null;
     }
   }
@@ -119,12 +121,27 @@ export class GitHubLoader implements OnModuleInit {
   }
 
   /**
+   * Log index statistics after scanning
+   */
+  private logIndexStats(): void {
+    const docs = this.scannedDocuments;
+    const categories = new Set(docs.map((d) => d.category));
+    const totalKeywords = docs.reduce((sum, d) => sum + d.keywords.length, 0);
+
+    this.logger.log(
+      `GitHub docs indexed: ${docs.length} documents, ${categories.size} categories, ` +
+      `${totalKeywords} keywords (repo: ${this.config.repo}, cache TTL: ${this.config.cacheTtl}s)`
+    );
+    this.logger.debug(`  Categories: ${Array.from(categories).sort().join(', ')}`);
+  }
+
+  /**
    * Scan repository for markdown files
    */
   private async scanRepository(): Promise<void> {
     const tree = await this.fetchTree();
     if (!tree) {
-      console.warn('GitHubLoader: Could not fetch repository tree');
+      this.logger.warn('Could not fetch repository tree');
       return;
     }
 
@@ -175,7 +192,7 @@ export class GitHubLoader implements OnModuleInit {
 
       return data;
     } catch (error) {
-      console.error('GitHubLoader: Failed to fetch tree:', error);
+      this.logger.error('Failed to fetch tree:', error);
       return null;
     }
   }
@@ -200,7 +217,7 @@ export class GitHubLoader implements OnModuleInit {
 
       return await response.text();
     } catch (error) {
-      console.error(`GitHubLoader: Failed to fetch content for ${path}:`, error);
+      this.logger.error(`Failed to fetch content for ${path}:`, error);
       return null;
     }
   }

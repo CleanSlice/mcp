@@ -139,6 +139,25 @@
       </div>
     </section>
 
+    <!-- Tips callout -->
+    <section class="pb-12">
+      <div class="max-w-[640px] mx-auto bg-gradient-to-br from-primary/[0.06] to-accent/[0.04] border border-primary/20 rounded-2xl p-7 relative overflow-hidden">
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-primary/[0.04] rounded-full blur-2xl pointer-events-none"></div>
+        <div class="flex items-start gap-4 max-sm:flex-col">
+          <div class="w-10 h-10 bg-primary/15 rounded-xl flex items-center justify-center shrink-0 text-lg mt-0.5">💡</div>
+          <div class="flex-1 min-w-0">
+            <div class="font-bold text-[0.95rem] mb-2">Get better results from your AI agent</div>
+            <p class="text-[0.85rem] text-muted-foreground leading-relaxed mb-4">
+              Installing the MCP server is step one. To make sure your agent <strong class="text-foreground">always</strong> consults CleanSlice docs before writing code, add an enforcement rule to your editor:
+            </p>
+            <p class="text-[0.84rem] text-muted-foreground leading-snug">
+              <strong class="text-foreground">Add an enforcement rule</strong> — a small config file that tells the agent to call <code class="bg-muted px-1 py-0.5 rounded font-mono text-[0.78rem] text-primary">get-started</code> and <code class="bg-muted px-1 py-0.5 rounded font-mono text-[0.78rem] text-primary">search</code> before every task. <a href="#install" class="text-primary no-underline hover:underline">See examples per editor below.</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- How it works -->
     <section class="py-12">
       <div class="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-primary mb-2">How it works</div>
@@ -147,18 +166,18 @@
       <div class="grid grid-cols-3 max-sm:grid-cols-1 gap-4">
         <div class="text-center p-7 bg-card border border-border rounded-xl">
           <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm inline-flex items-center justify-center mb-3.5">1</div>
-          <div class="font-bold text-[0.9rem] mb-1.5">Connect your editor</div>
-          <div class="text-[0.82rem] text-muted-foreground leading-snug">Add the MCP server to Cursor, Claude, VS Code, or any MCP client.</div>
+          <div class="font-bold text-[0.9rem] mb-1.5">Install the MCP server</div>
+          <div class="text-[0.82rem] text-muted-foreground leading-snug">Add CleanSlice MCP to Cursor, Claude Code, VS Code, Windsurf, or any MCP client.</div>
         </div>
         <div class="text-center p-7 bg-card border border-border rounded-xl">
           <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm inline-flex items-center justify-center mb-3.5">2</div>
-          <div class="font-bold text-[0.9rem] mb-1.5">Ask the AI to build</div>
-          <div class="text-[0.82rem] text-muted-foreground leading-snug">Prompt as usual — the agent now has access to CleanSlice docs and conventions.</div>
+          <div class="font-bold text-[0.9rem] mb-1.5">Add enforcement rules</div>
+          <div class="text-[0.82rem] text-muted-foreground leading-snug">A small config file ensures the agent always consults CleanSlice docs before writing code.</div>
         </div>
         <div class="text-center p-7 bg-card border border-border rounded-xl">
           <div class="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm inline-flex items-center justify-center mb-3.5">3</div>
-          <div class="font-bold text-[0.9rem] mb-1.5">Get clean output</div>
-          <div class="text-[0.82rem] text-muted-foreground leading-snug">Code follows slice architecture, naming rules, and project structure automatically.</div>
+          <div class="font-bold text-[0.9rem] mb-1.5">Get CleanSlice architecture</div>
+          <div class="text-[0.82rem] text-muted-foreground leading-snug">Every prompt produces code that follows CleanSlice architecture, naming rules, and project structure.</div>
         </div>
       </div>
     </section>
@@ -174,7 +193,7 @@
       <div class="grid grid-cols-2 max-sm:grid-cols-1 gap-3" id="installGrid">
 
         <div class="install-card bg-card border border-border rounded-xl p-5 cursor-pointer transition-all duration-200 relative overflow-hidden hover:border-[#3A5A6A] hover:bg-muted hover:-translate-y-px" data-editor="cursor">
-          <div class="flex items-center gap-3 mb-1">
+          <div class="flex items-center gap-3 mb-1.5">
             <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background: #1E3442;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M5 3l14 9-14 9V3z" fill="#00d4aa"/></svg>
             </div>
@@ -183,11 +202,12 @@
               <div class="text-[0.78rem] text-[#6E8796] mt-0.5">~/.cursor/mcp.json</div>
             </div>
           </div>
+          <div class="text-[0.72rem] text-primary/70 pl-12">+ enforcement rule</div>
           <span class="absolute right-[18px] top-1/2 -translate-y-1/2 text-[#6E8796] text-sm transition-all duration-200">→</span>
         </div>
 
         <div class="install-card bg-card border border-border rounded-xl p-5 cursor-pointer transition-all duration-200 relative overflow-hidden hover:border-[#3A5A6A] hover:bg-muted hover:-translate-y-px" data-editor="claude-code">
-          <div class="flex items-center gap-3 mb-1">
+          <div class="flex items-center gap-3 mb-1.5">
             <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background: #2A1F18;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#d4a574"/></svg>
             </div>
@@ -196,11 +216,12 @@
               <div class="text-[0.78rem] text-[#6E8796] mt-0.5">One command</div>
             </div>
           </div>
+          <div class="text-[0.72rem] text-primary/70 pl-12">+ enforcement rule + stop hook</div>
           <span class="absolute right-[18px] top-1/2 -translate-y-1/2 text-[#6E8796] text-sm transition-all duration-200">→</span>
         </div>
 
         <div class="install-card bg-card border border-border rounded-xl p-5 cursor-pointer transition-all duration-200 relative overflow-hidden hover:border-[#3A5A6A] hover:bg-muted hover:-translate-y-px" data-editor="vscode">
-          <div class="flex items-center gap-3 mb-1">
+          <div class="flex items-center gap-3 mb-1.5">
             <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background: #162433;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M17 2L7 12l10 10 5-3V5l-5-3zM2 12l5-4.5v9L2 12z" fill="#4da6ff"/></svg>
             </div>
@@ -209,11 +230,12 @@
               <div class="text-[0.78rem] text-[#6E8796] mt-0.5">.vscode/mcp.json</div>
             </div>
           </div>
+          <div class="text-[0.72rem] text-primary/70 pl-12">+ enforcement rule</div>
           <span class="absolute right-[18px] top-1/2 -translate-y-1/2 text-[#6E8796] text-sm transition-all duration-200">→</span>
         </div>
 
         <div class="install-card bg-card border border-border rounded-xl p-5 cursor-pointer transition-all duration-200 relative overflow-hidden hover:border-[#3A5A6A] hover:bg-muted hover:-translate-y-px" data-editor="windsurf">
-          <div class="flex items-center gap-3 mb-1">
+          <div class="flex items-center gap-3 mb-1.5">
             <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background: #162030;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M3 17c3-4 6-4 9 0s6 4 9 0" stroke="#7c8cff" stroke-width="2.5" fill="none" stroke-linecap="round"/></svg>
             </div>
@@ -222,6 +244,7 @@
               <div class="text-[0.78rem] text-[#6E8796] mt-0.5">MCP config file</div>
             </div>
           </div>
+          <div class="text-[0.72rem] text-primary/70 pl-12">+ enforcement rule</div>
           <span class="absolute right-[18px] top-1/2 -translate-y-1/2 text-[#6E8796] text-sm transition-all duration-200">→</span>
         </div>
 
@@ -239,7 +262,7 @@
         </div>
 
         <div class="install-card bg-card border border-border rounded-xl p-5 cursor-pointer transition-all duration-200 relative overflow-hidden hover:border-[#3A5A6A] hover:bg-muted hover:-translate-y-px" data-editor="opencode">
-          <div class="flex items-center gap-3 mb-1">
+          <div class="flex items-center gap-3 mb-1.5">
             <div class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style="background: #1A2E22;">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke="#55cc55" stroke-width="1.5" stroke-linecap="round"/></svg>
             </div>
@@ -248,6 +271,7 @@
               <div class="text-[0.78rem] text-[#6E8796] mt-0.5">Opencode config</div>
             </div>
           </div>
+          <div class="text-[0.72rem] text-primary/70 pl-12">+ enforcement rule</div>
           <span class="absolute right-[18px] top-1/2 -translate-y-1/2 text-[#6E8796] text-sm transition-all duration-200">→</span>
         </div>
 
@@ -268,7 +292,7 @@
     <section class="py-12">
       <div class="text-[0.7rem] font-bold uppercase tracking-[0.12em] text-primary mb-2">Capabilities</div>
       <h2 class="text-2xl font-bold tracking-tight mb-1.5">What your AI gets access to</h2>
-      <p class="text-muted-foreground text-[0.92rem] mb-7">Three tools that turn any MCP-compatible agent into a CleanSlice expert.</p>
+      <p class="text-muted-foreground text-[0.92rem] mb-7">Four tools that turn any MCP-compatible agent into a CleanSlice expert.</p>
 
       <div class="flex flex-col gap-2.5">
         <div class="flex items-start gap-4 p-5 bg-card border border-border rounded-xl transition-colors hover:border-[#3A5A6A]">
@@ -289,7 +313,14 @@
           <div class="w-10 h-10 bg-primary/10 rounded-[10px] flex items-center justify-center shrink-0 text-lg">🔍</div>
           <div>
             <div class="font-mono font-semibold text-[0.88rem] text-primary mb-0.5">search</div>
-            <div class="text-[0.85rem] text-muted-foreground leading-snug">Full-text search across docs — filterable by query, framework (NestJS, Nuxt), development phase, feature name, category, or tags. The AI uses this to find exactly the right pattern for your use case.</div>
+            <div class="text-[0.85rem] text-muted-foreground leading-snug">Full-text search across docs — filterable by query, framework (NestJS, Nuxt), development phase, feature name, category, or tags. Returns compact keyword-in-context snippets instead of full documents.</div>
+          </div>
+        </div>
+        <div class="flex items-start gap-4 p-5 bg-card border border-border rounded-xl transition-colors hover:border-[#3A5A6A]">
+          <div class="w-10 h-10 bg-primary/10 rounded-[10px] flex items-center justify-center shrink-0 text-lg">📄</div>
+          <div>
+            <div class="font-mono font-semibold text-[0.88rem] text-primary mb-0.5">read-doc</div>
+            <div class="text-[0.85rem] text-muted-foreground leading-snug">Read the full content of a specific document by path. Use after <code class="bg-muted px-1 py-0.5 rounded font-mono text-[0.8rem] text-primary">search</code> when snippets aren't enough — returns the complete document with no truncation.</div>
           </div>
         </div>
       </div>
@@ -390,6 +421,7 @@ Before writing or modifying any code you MUST consult the CleanSlice MCP:
 3. Call \`search\` with at least 2 task-relevant queries covering:
    (a) core implementation details for the feature you are building,
    (b) edge cases, constraints, or standards that apply.
+4. Call \`read-doc\` to read the full document when search snippets aren't enough.
 
 Do NOT guess conventions — always verify against MCP results first.`
         }
@@ -412,6 +444,7 @@ Before writing or modifying any code you MUST consult the CleanSlice MCP:
 3. Call \`search\` with at least 2 task-relevant queries covering:
    (a) core implementation details for the feature you are building,
    (b) edge cases, constraints, or standards that apply.
+4. Call \`read-doc\` to read the full document when search snippets aren't enough.
 
 Do NOT guess conventions — always verify against MCP results first.`
         },
@@ -427,7 +460,7 @@ Do NOT guess conventions — always verify against MCP results first.`
           {
             "type": "agent",
             "timeout": 180,
-            "prompt": "You are a verification subagent. Your job: ensure the main Claude Code agent used the \`cleanslice\` MCP knowledge sufficiently and did not guess.\\n\\nContext JSON:\\n$ARGUMENTS\\n\\nVerification requirements:\\n1) Identify what the user asked for (deliverables + constraints) from the conversation/transcript in $ARGUMENTS.\\n2) Verify the agent consulted the \`cleanslice\` MCP server for relevant knowledge BEFORE finalizing:\\n   - Must call \`cleanslice\` \\"get-started\\" at least once (or equivalent) to confirm the server's purpose and usage.\\n   - Must call \\"list-categories\\" to understand the available knowledge areas.\\n   - Must call \\"search\\" with task-relevant queries (at least 2 searches) covering: (a) core implementation details, (b) edge cases / constraints.\\n3) Validate coverage:\\n   - If any required category is relevant but not checked, fail.\\n   - If answers include specifics that are not supported by MCP results, fail.\\n4) Output STRICT JSON only:\\n   - If everything is verified: {\\"ok\\": true}\\n   - If anything is missing/unsupported: {\\"ok\\": false, \\"reason\\": \\"What is missing + exact MCP calls the main agent must run next (e.g., run list-categories, then search for X/Y, then update the solution).\\"}\\n\\nImportant:\\n- \`cleanslice\` tools will appear as MCP tools. Use whatever exact tool names are available in this environment (they follow the mcp__<server>__<tool> naming pattern).\\n- Do not allow stopping until MCP-backed evidence is sufficient."
+            "prompt": "You are a verification subagent. Your job: ensure the main Claude Code agent used the \`cleanslice\` MCP knowledge sufficiently and did not guess.\\n\\nContext JSON:\\n$ARGUMENTS\\n\\nVerification requirements:\\n1) Identify what the user asked for (deliverables + constraints) from the conversation/transcript in $ARGUMENTS.\\n2) Verify the agent consulted the \`cleanslice\` MCP server for relevant knowledge BEFORE finalizing:\\n   - Must call \`cleanslice\` \\"get-started\\" at least once (or equivalent) to confirm the server's purpose and usage.\\n   - Must call \\"list-categories\\" to understand the available knowledge areas.\\n   - Must call \\"search\\" with task-relevant queries (at least 2 searches) covering: (a) core implementation details, (b) edge cases / constraints.\\n   - May call \\"read-doc\\" to get full document content when search snippets are insufficient.\\n3) Validate coverage:\\n   - If any required category is relevant but not checked, fail.\\n   - If answers include specifics that are not supported by MCP results, fail.\\n4) Output STRICT JSON only:\\n   - If everything is verified: {\\"ok\\": true}\\n   - If anything is missing/unsupported: {\\"ok\\": false, \\"reason\\": \\"What is missing + exact MCP calls the main agent must run next (e.g., run list-categories, then search for X/Y, then update the solution).\\"}\\n\\nImportant:\\n- \`cleanslice\` tools will appear as MCP tools. Use whatever exact tool names are available in this environment (they follow the mcp__<server>__<tool> naming pattern).\\n- Do not allow stopping until MCP-backed evidence is sufficient."
           }
         ]
       }
@@ -461,6 +494,7 @@ Before writing or modifying any code you MUST consult the CleanSlice MCP:
 3. Call \`search\` with at least 2 task-relevant queries covering:
    (a) core implementation details for the feature you are building,
    (b) edge cases, constraints, or standards that apply.
+4. Call \`read-doc\` to read the full document when search snippets aren't enough.
 
 Do NOT guess conventions — always verify against MCP results first.`
         }
@@ -490,6 +524,7 @@ Before writing or modifying any code you MUST consult the CleanSlice MCP:
 3. Call \`search\` with at least 2 task-relevant queries covering:
    (a) core implementation details for the feature you are building,
    (b) edge cases, constraints, or standards that apply.
+4. Call \`read-doc\` to read the full document when search snippets aren't enough.
 
 Do NOT guess conventions — always verify against MCP results first.`
         }
@@ -533,6 +568,7 @@ Before writing or modifying any code you MUST consult the CleanSlice MCP:
 3. Call \`search\` with at least 2 task-relevant queries covering:
    (a) core implementation details for the feature you are building,
    (b) edge cases, constraints, or standards that apply.
+4. Call \`read-doc\` to read the full document when search snippets aren't enough.
 
 Do NOT guess conventions — always verify against MCP results first.`
         }

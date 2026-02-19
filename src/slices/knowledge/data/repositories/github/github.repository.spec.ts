@@ -139,11 +139,12 @@ describe('GitHubRepository', () => {
       }
     });
 
-    it('should load content for matched documents', async () => {
+    it('should load content and extract snippets for matched documents', async () => {
       const results = await repository.search({ query: 'gateway' });
 
       expect(results.length).toBeGreaterThan(0);
-      expect(results[0].content).toBe(mockContent);
+      expect(results[0]).toHaveProperty('snippets');
+      expect(Array.isArray(results[0].snippets)).toBe(true);
       expect(githubLoader.loadDocument).toHaveBeenCalled();
     });
 

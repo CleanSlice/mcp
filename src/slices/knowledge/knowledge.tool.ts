@@ -10,14 +10,16 @@ import { KnowledgeService } from './domain/knowledge.service';
 import {
   FrameworkArchitectureResponseDto,
   SearchResultsResponseDto,
+  DocumentResponseDto,
 } from './dtos/knowledgeResponse.dto';
 
 /**
  * Knowledge tool
  *
- * Provides two simple tools:
+ * Provides tools for accessing framework documentation:
  * - getStarted: Returns essential slice creation rules (read first!)
- * - search: Dynamically searches for relevant documentation
+ * - search: Dynamically searches for relevant documentation (returns snippets)
+ * - readDoc: Returns full document content by path
  *
  * Error Handling:
  * - No try-catch blocks needed - errors are caught by ErrorHandlingInterceptor
@@ -126,6 +128,33 @@ export class KnowledgeTool {
     const dto = new SearchResultsResponseDto(results, { total, limit: appliedLimit, offset: appliedOffset });
 
     this.logger.debug(`search: returned ${results.length} of ${total} document(s) (offset: ${appliedOffset})`);
+    return dto.toMcpResponse();
+  }
+
+  @Tool({
+    name: 'read-doc',
+    description:
+      'Read the full content of a specific document by path. Use this after `search` to get the complete document when snippets are not enough.',
+    parameters: z.object({
+      path: z.string().describe('Document path from search results'),
+    }),
+  })
+  async readDoc({ path }: { path: string }) {
+    this.logger.debug(`read-doc requested: ${path}`);
+
+    const content = await this.knowledgeService.readDocument(path);
+
+    if (!content) {
+      return {
+        content: [{ type: 'text' as const, text: `Document not found: \`${path}\`` }],
+        isError: true,
+      };
+    }
+
+    const name = path.split('/').pop()?.replace('.md', '') || path;
+    const dto = new DocumentResponseDto(name, path, content);
+
+    this.logger.debug(`read-doc: returned document ${path}`);
     return dto.toMcpResponse();
   }
 }

@@ -23,6 +23,8 @@ describe('DocsRepository', () => {
       category: 'quickstart',
       tags: ['new-project', 'setup', 'quickstart', 'guide'],
       keywords: ['new', 'project', 'setup', 'start', 'guide', 'quickstart'],
+      content: mockDocContent,
+      contentLower: mockDocContent.toLowerCase(),
     },
     {
       path: '00-quickstart/development-roadmap.md',
@@ -31,6 +33,8 @@ describe('DocsRepository', () => {
       category: 'quickstart',
       tags: ['roadmap', 'development', 'steps', 'planning'],
       keywords: ['development', 'roadmap', 'steps', 'planning', 'guide'],
+      content: mockDocContent,
+      contentLower: mockDocContent.toLowerCase(),
     },
     {
       path: '02-patterns/nestjs-guide.md',
@@ -39,6 +43,8 @@ describe('DocsRepository', () => {
       category: 'patterns',
       tags: ['nestjs', 'backend', 'api'],
       keywords: ['nestjs', 'backend', 'api', 'guide'],
+      content: mockDocContent,
+      contentLower: mockDocContent.toLowerCase(),
     },
     {
       path: '02-patterns/nuxt-guide.md',
@@ -47,6 +53,8 @@ describe('DocsRepository', () => {
       category: 'patterns',
       tags: ['nuxt', 'frontend', 'app'],
       keywords: ['nuxt', 'frontend', 'app', 'guide'],
+      content: mockDocContent,
+      contentLower: mockDocContent.toLowerCase(),
     },
   ];
 
@@ -93,7 +101,7 @@ describe('DocsRepository', () => {
       expect(results.length).toBeGreaterThan(0);
       expect(results[0]).toHaveProperty('name');
       expect(results[0]).toHaveProperty('path');
-      expect(results[0]).toHaveProperty('content');
+      expect(results[0]).toHaveProperty('snippets');
     });
 
     it('should throw error for unsupported framework', () => {
@@ -160,7 +168,7 @@ describe('DocsRepository', () => {
       const doc = results[0];
       expect(doc).toHaveProperty('name');
       expect(doc).toHaveProperty('path');
-      expect(doc).toHaveProperty('content');
+      expect(doc).toHaveProperty('snippets');
       expect(doc).toHaveProperty('description');
       expect(doc).toHaveProperty('category');
       expect(doc).toHaveProperty('tags');

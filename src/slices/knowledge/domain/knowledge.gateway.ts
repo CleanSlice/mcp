@@ -44,4 +44,6 @@ export interface IKnowledgeGateway {
   search(query: IDocumentSearchQuery): Promise<IPaginatedSearchResult>;
 
   getCategories(): Promise<string[]>;
+
+  readDocument(path: string): Promise<string | null>;
 }

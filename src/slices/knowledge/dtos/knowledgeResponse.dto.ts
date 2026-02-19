@@ -169,15 +169,16 @@ interface IPaginationMeta {
 
 /**
  * Search results response DTO
+ *
+ * Renders snippet-based search results. Each result includes 1-3 keyword-in-context
+ * excerpts instead of full document content. Use `read-doc` tool to get full content.
  */
 export class SearchResultsResponseDto extends BaseMcpResponseDto {
-  private static readonly MAX_TOTAL_CONTENT = 20000;
-
   constructor(
     private readonly results: Array<{
       name: string;
       path: string;
-      content: string;
+      snippets: string[];
       description?: string;
       category?: string;
       tags?: string[];
@@ -188,22 +189,8 @@ export class SearchResultsResponseDto extends BaseMcpResponseDto {
     super();
   }
 
-  private truncateContent(text: string, maxLength: number): { text: string; truncated: boolean } {
-    if (text.length <= maxLength) {
-      return { text, truncated: false };
-    }
-    const truncated = text.slice(0, maxLength);
-    const lastNewline = truncated.lastIndexOf('\n');
-    return {
-      text: lastNewline > maxLength * 0.8
-        ? truncated.slice(0, lastNewline)
-        : truncated,
-      truncated: true,
-    };
-  }
-
   toMarkdown(): string {
-    const { total, limit, offset } = this.pagination;
+    const { total, offset } = this.pagination;
 
     if (this.results.length === 0) {
       return '# Search Results\n\nNo documents found matching your query.';
@@ -223,30 +210,26 @@ export class SearchResultsResponseDto extends BaseMcpResponseDto {
       }
 
       if (doc.category || doc.tags?.length) {
-        content += '**Metadata:**\n';
         if (doc.category) {
           content += `- Category: \`${doc.category}\`\n`;
         }
         if (doc.tags && doc.tags.length > 0) {
           content += `- Tags: ${doc.tags.map(t => `\`${t}\``).join(', ')}\n`;
         }
-        if (doc.relevanceScore !== undefined) {
-          content += `- Relevance Score: ${doc.relevanceScore}\n`;
-        }
         content += '\n';
       }
 
       content += `**Path:** \`${doc.path}\`\n\n`;
-      content += '**Content:**\n\n';
 
-      const maxPerDoc = Math.floor(SearchResultsResponseDto.MAX_TOTAL_CONTENT / this.results.length);
-      const { text: docContent, truncated } = this.truncateContent(doc.content, maxPerDoc);
-      content += docContent;
-      if (truncated) {
-        content += '\n\n> **Content truncated.** Use `search` with `limit: 1` and a more specific query to get fuller content.\n';
+      if (doc.snippets.length > 0) {
+        content += '**Snippets:**\n\n';
+        doc.snippets.forEach((snippet) => {
+          content += `> ${snippet.replace(/\n/g, '\n> ')}\n\n`;
+        });
       }
 
-      content += '\n\n---\n\n';
+      content += `> Use \`read-doc\` with path \`${doc.path}\` to get the full document.\n\n`;
+      content += '---\n\n';
     });
 
     if (to < total) {
@@ -254,5 +237,27 @@ export class SearchResultsResponseDto extends BaseMcpResponseDto {
     }
 
     return content;
+  }
+}
+
+/**
+ * Document response DTO
+ *
+ * Returns full document content for a single document loaded via `read-doc` tool.
+ */
+export class DocumentResponseDto extends BaseMcpResponseDto {
+  constructor(
+    private readonly name: string,
+    private readonly path: string,
+    private readonly content: string,
+  ) {
+    super();
+  }
+
+  toMarkdown(): string {
+    let md = `# ${this.name}\n\n`;
+    md += `**Path:** \`${this.path}\`\n\n---\n\n`;
+    md += this.content;
+    return md;
   }
 }

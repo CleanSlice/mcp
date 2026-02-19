@@ -6,7 +6,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { KnowledgeGateway } from './knowledge.gateway';
 import { DocsRepository } from './repositories/docs/docs.repository';
+import { DocsLoader } from './repositories/docs/docs.loader';
 import { GitHubRepository } from './repositories/github/github.repository';
+import { GitHubLoader } from './repositories/github/github.loader';
 import type { IDocumentSearchResult } from './repositories/docs/docs.repository';
 
 describe('KnowledgeGateway', () => {
@@ -19,7 +21,7 @@ describe('KnowledgeGateway', () => {
     {
       name: 'CleanSlice Architecture Rules',
       path: '00-quickstart/rules.md',
-      content: '# Rules\n\nSINGULAR names!',
+      snippets: ['SINGULAR names!'],
       description: 'Critical rules',
       category: 'quickstart',
       tags: ['rules', 'quickstart'],
@@ -29,7 +31,7 @@ describe('KnowledgeGateway', () => {
     {
       name: 'New Project Setup',
       path: '00-quickstart/new-project.md',
-      content: '# New Project\n\nSetup guide',
+      snippets: ['Setup guide for new projects'],
       description: 'Project setup',
       category: 'quickstart',
       tags: ['setup', 'quickstart'],
@@ -43,7 +45,7 @@ describe('KnowledgeGateway', () => {
     {
       name: 'Gateway Pattern',
       path: '02-patterns/gateway-pattern.md',
-      content: '# Gateway Pattern\n\nOverview',
+      snippets: ['Gateway pattern overview'],
       description: 'Gateway pattern docs',
       category: 'patterns',
       tags: ['gateway', 'patterns'],
@@ -53,7 +55,7 @@ describe('KnowledgeGateway', () => {
     {
       name: 'CleanSlice Architecture Rules', // Duplicate
       path: 'docs/rules.md',
-      content: '# Old Rules from GitHub',
+      snippets: ['Old rules from GitHub'],
       description: 'Old rules',
       category: 'quickstart',
       tags: ['rules'],
@@ -61,6 +63,22 @@ describe('KnowledgeGateway', () => {
       source: 'github',
     },
   ];
+
+  const mockDocsLoader = {
+    loadDocument: jest.fn().mockReturnValue('# Rules\n\nSINGULAR names!'),
+    getScannedDocuments: jest.fn().mockReturnValue([]),
+    getCategories: jest.fn().mockReturnValue([]),
+    getBasePath: jest.fn().mockReturnValue('/docs'),
+    rescan: jest.fn(),
+  };
+
+  const mockGitHubLoader = {
+    loadDocument: jest.fn().mockResolvedValue(null),
+    getScannedDocuments: jest.fn().mockResolvedValue([]),
+    getCategories: jest.fn().mockResolvedValue([]),
+    initialize: jest.fn().mockResolvedValue(undefined),
+    rescan: jest.fn().mockResolvedValue(undefined),
+  };
 
   beforeEach(async () => {
     const mockDocsRepo = {
@@ -79,7 +97,9 @@ describe('KnowledgeGateway', () => {
       providers: [
         KnowledgeGateway,
         { provide: DocsRepository, useValue: mockDocsRepo },
+        { provide: DocsLoader, useValue: mockDocsLoader },
         { provide: GitHubRepository, useValue: mockGitHubRepo },
+        { provide: GitHubLoader, useValue: mockGitHubLoader },
       ],
     }).compile();
 
@@ -112,7 +132,7 @@ describe('KnowledgeGateway', () => {
 
       // Should be local version (higher score, local path)
       expect(rulesDoc?.path).toBe('00-quickstart/rules.md');
-      expect(rulesDoc?.content).toBe('# Rules\n\nSINGULAR names!');
+      expect(rulesDoc?.snippets).toEqual(['SINGULAR names!']);
     });
 
     it('should sort merged results by relevance score', async () => {
@@ -225,7 +245,7 @@ describe('KnowledgeGateway', () => {
         {
           name: 'Overview',
           path: '00-quickstart/overview.md',
-          content: '# Overview\n\nGeneral overview',
+          snippets: ['General overview'],
           description: 'Overview',
           category: 'quickstart',
           tags: ['overview'],
@@ -248,7 +268,7 @@ describe('KnowledgeGateway', () => {
         {
           name: 'Rules',
           path: 'docs/Rules.md',
-          content: 'Local rules',
+          snippets: ['Local rules'],
           relevanceScore: 20,
           source: 'local',
         },
@@ -257,7 +277,7 @@ describe('KnowledgeGateway', () => {
         {
           name: 'Rules',
           path: 'github/rules.md', // Same filename, different case
-          content: 'GitHub rules',
+          snippets: ['GitHub rules'],
           relevanceScore: 15,
           source: 'github',
         },
@@ -267,7 +287,7 @@ describe('KnowledgeGateway', () => {
 
       // Should only have one rules.md
       expect(results.length).toBe(1);
-      expect(results[0].content).toBe('Local rules'); // Local preferred
+      expect(results[0].snippets).toEqual(['Local rules']); // Local preferred
     });
 
     it('should not dedupe documents with different filenames', async () => {
@@ -275,7 +295,7 @@ describe('KnowledgeGateway', () => {
         {
           name: 'Setup',
           path: 'docs/setup.md',
-          content: 'Local setup',
+          snippets: ['Local setup'],
           relevanceScore: 20,
           source: 'local',
         },
@@ -284,7 +304,7 @@ describe('KnowledgeGateway', () => {
         {
           name: 'Installation',
           path: 'github/install.md',
-          content: 'GitHub install',
+          snippets: ['GitHub install'],
           relevanceScore: 15,
           source: 'github',
         },
@@ -293,6 +313,32 @@ describe('KnowledgeGateway', () => {
       const { results } = await gateway.search({ query: 'setup', limit: 100 });
 
       expect(results.length).toBe(2);
+    });
+  });
+
+  describe('readDocument', () => {
+    it('should return local document when available', async () => {
+      const content = await gateway.readDocument('00-quickstart/rules.md');
+
+      expect(content).toBe('# Rules\n\nSINGULAR names!');
+    });
+
+    it('should fall back to GitHub when local not found', async () => {
+      mockDocsLoader.loadDocument.mockReturnValueOnce(null);
+      mockGitHubLoader.loadDocument.mockResolvedValueOnce('# GitHub Content');
+
+      const content = await gateway.readDocument('github-only.md');
+
+      expect(content).toBe('# GitHub Content');
+    });
+
+    it('should return null when document not found anywhere', async () => {
+      mockDocsLoader.loadDocument.mockReturnValueOnce(null);
+      mockGitHubLoader.loadDocument.mockResolvedValueOnce(null);
+
+      const content = await gateway.readDocument('nonexistent.md');
+
+      expect(content).toBeNull();
     });
   });
 });

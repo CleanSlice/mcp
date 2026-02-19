@@ -4,7 +4,9 @@ import type { Response } from 'express';
 import { readFileSync } from 'fs';
 import { join } from 'path';
 
-const landingHtml = readFileSync(join(__dirname, 'landing.html'), 'utf-8');
+const htmlPath = join(__dirname, 'landing.html');
+const isDev = process.env.NODE_ENV === 'dev';
+const cachedHtml = isDev ? null : readFileSync(htmlPath, 'utf-8');
 
 @ApiTags('api')
 @Controller()
@@ -20,6 +22,6 @@ export class HealthController {
   @Get()
   landing(@Res() res: Response) {
     res.setHeader('Content-Type', 'text/html');
-    res.send(landingHtml);
+    res.send(cachedHtml ?? readFileSync(htmlPath, 'utf-8'));
   }
 }

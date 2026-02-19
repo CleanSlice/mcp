@@ -29,7 +29,7 @@ export interface IDocumentSearchQuery {
 export interface IDocumentSearchResult {
   name: string;
   path: string;
-  content: string;
+  snippets: string[];
   description?: string;
   category?: string;
   tags?: string[];
@@ -46,6 +46,8 @@ export interface IDocumentSearchResult {
 @Injectable()
 export class DocsRepository {
   private readonly supportedFrameworks = ['nestjs', 'nuxt'];
+  private static readonly MAX_SNIPPETS = 3;
+  private static readonly SNIPPET_WINDOW = 150;
 
   constructor(private readonly docsLoader: DocsLoader) {}
 
@@ -68,6 +70,7 @@ export class DocsRepository {
    *
    * Dynamically finds and returns documents relevant to the search query.
    * Uses keyword matching, category filtering, and context-aware relevance scoring.
+   * Returns snippets (keyword-in-context excerpts) instead of full content.
    *
    * @param query - Search query with optional context parameters
    * @returns Array of relevant documents sorted by relevance
@@ -190,24 +193,110 @@ export class DocsRepository {
 
       // Only include documents with positive relevance
       if (score > 0) {
-        const content = this.docsLoader.loadDocument(doc.path);
-        if (content) {
-          results.push({
-            name: doc.name,
-            path: doc.path,
-            content,
-            description: doc.description,
-            category: doc.category,
-            tags: doc.tags,
-            relevanceScore: score,
-            source: 'local',
-          });
-        }
+        const snippets = this.extractSnippets(doc.content, doc.contentLower, query.query);
+        results.push({
+          name: doc.name,
+          path: doc.path,
+          snippets,
+          description: doc.description,
+          category: doc.category,
+          tags: doc.tags,
+          relevanceScore: score,
+          source: 'local',
+        });
       }
     }
 
     // Sort by relevance score (descending)
     return results.sort((a, b) => b.relevanceScore - a.relevanceScore);
+  }
+
+  /**
+   * Extract keyword-in-context snippets from document content
+   */
+  private extractSnippets(content: string, contentLower: string, query?: string): string[] {
+    if (!query) {
+      // No query text — return first paragraph as snippet
+      return [this.getFirstParagraphSnippet(content)];
+    }
+
+    const queryLower = query.toLowerCase().trim();
+    const queryWords = queryLower.split(/\s+/).filter((w) => w.length > 0);
+    const window = DocsRepository.SNIPPET_WINDOW;
+    const ranges: Array<{ start: number; end: number }> = [];
+
+    // Find match positions for the full phrase first, then individual words
+    const terms = contentLower.includes(queryLower)
+      ? [queryLower]
+      : queryWords;
+
+    for (const term of terms) {
+      let pos = 0;
+      while (pos < contentLower.length && ranges.length < 10) {
+        const idx = contentLower.indexOf(term, pos);
+        if (idx === -1) break;
+        const start = Math.max(0, idx - window);
+        const end = Math.min(content.length, idx + term.length + window);
+        ranges.push({ start, end });
+        pos = idx + term.length;
+      }
+    }
+
+    if (ranges.length === 0) {
+      return [this.getFirstParagraphSnippet(content)];
+    }
+
+    // Sort by position and merge overlapping ranges
+    ranges.sort((a, b) => a.start - b.start);
+    const merged: Array<{ start: number; end: number }> = [ranges[0]];
+    for (let i = 1; i < ranges.length; i++) {
+      const last = merged[merged.length - 1];
+      if (ranges[i].start <= last.end) {
+        last.end = Math.max(last.end, ranges[i].end);
+      } else {
+        merged.push(ranges[i]);
+      }
+    }
+
+    // Extract snippet text, break at newlines for cleaner boundaries
+    return merged.slice(0, DocsRepository.MAX_SNIPPETS).map(({ start, end }) => {
+      let text = content.slice(start, end);
+      // Trim to newline boundaries if not at document edges
+      if (start > 0) {
+        const firstNewline = text.indexOf('\n');
+        if (firstNewline !== -1 && firstNewline < window * 0.3) {
+          text = text.slice(firstNewline + 1);
+        } else {
+          text = '...' + text;
+        }
+      }
+      if (end < content.length) {
+        const lastNewline = text.lastIndexOf('\n');
+        if (lastNewline !== -1 && lastNewline > text.length * 0.7) {
+          text = text.slice(0, lastNewline);
+        } else {
+          text = text + '...';
+        }
+      }
+      return text.trim();
+    });
+  }
+
+  private getFirstParagraphSnippet(content: string): string {
+    const withoutFrontmatter = content.replace(/^---\n[\s\S]*?\n---\n?/, '');
+    const lines = withoutFrontmatter.split('\n');
+    let snippet = '';
+    let started = false;
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!started) {
+        if (trimmed.startsWith('#') || trimmed === '') continue;
+        started = true;
+      }
+      if (started && (trimmed === '' || trimmed.startsWith('#'))) break;
+      snippet += (snippet ? ' ' : '') + trimmed;
+    }
+    return snippet.length > 300 ? snippet.slice(0, 300) + '...' : snippet;
   }
 
   /**

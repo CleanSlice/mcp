@@ -3,7 +3,7 @@
 // @layer:data
 // @type:loader
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { readFileSync, existsSync, readdirSync, statSync } from 'fs';
 import { join, basename, dirname } from 'path';
@@ -24,6 +24,10 @@ export interface IScannedDocument {
   tags: string[];
   /** Keywords for search (extracted from content) */
   keywords: string[];
+  /** Full document content (pre-loaded at startup) */
+  content: string;
+  /** Lowercase content for case-insensitive search */
+  contentLower: string;
 }
 
 /**
@@ -34,6 +38,7 @@ export interface IScannedDocument {
  */
 @Injectable()
 export class DocsLoader {
+  private readonly logger = new Logger(DocsLoader.name);
   private readonly docsBasePath: string;
   private scannedDocuments: IScannedDocument[] = [];
 
@@ -50,6 +55,7 @@ export class DocsLoader {
 
     // Scan directory on initialization
     this.scanDirectory();
+    this.logIndexStats();
   }
 
   /**
@@ -88,6 +94,23 @@ export class DocsLoader {
   }
 
   /**
+   * Log index statistics after scanning
+   */
+  private logIndexStats(): void {
+    const docs = this.scannedDocuments;
+    const categories = this.getCategories();
+    const totalContentSize = docs.reduce((sum, d) => sum + d.content.length, 0);
+    const totalKeywords = docs.reduce((sum, d) => sum + d.keywords.length, 0);
+
+    this.logger.log(
+      `Local docs indexed: ${docs.length} documents, ${categories.length} categories, ` +
+      `${totalKeywords} keywords, ${(totalContentSize / 1024).toFixed(0)}KB in memory`
+    );
+    this.logger.debug(`  Path: ${this.docsBasePath}`);
+    this.logger.debug(`  Categories: ${categories.join(', ')}`);
+  }
+
+  /**
    * Load a document by path
    *
    * @param documentPath - Relative path from docs directory
@@ -103,7 +126,7 @@ export class DocsLoader {
     try {
       return readFileSync(fullPath, 'utf-8');
     } catch (error) {
-      console.error(`Failed to load document at ${fullPath}:`, error);
+      this.logger.error(`Failed to load document at ${fullPath}:`, error);
       return null;
     }
   }
@@ -167,6 +190,8 @@ export class DocsLoader {
       category,
       tags,
       keywords,
+      content,
+      contentLower: content.toLowerCase(),
     };
   }
 

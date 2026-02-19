@@ -31,4 +31,8 @@ export class KnowledgeService {
   async getCategories(): Promise<string[]> {
     return this.knowledgeGateway.getCategories();
   }
+
+  async readDocument(path: string): Promise<string | null> {
+    return this.knowledgeGateway.readDocument(path);
+  }
 }
