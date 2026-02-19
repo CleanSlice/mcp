@@ -6,8 +6,11 @@ import helmet from "helmet";
 import * as fs from "fs";
 
 async function bootstrap() {
-  console.log("MAIN START: Initializing Nest");
-  const app = await NestFactory.create(AppModule);
+  const isDev = process.env.NODE_ENV === "dev";
+
+  const app = await NestFactory.create(AppModule, {
+    logger: isDev ? ["log", "warn", "error", "debug", "verbose"] : ["log", "warn", "error"],
+  });
 
   app.use(
     helmet({

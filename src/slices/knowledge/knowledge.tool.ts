@@ -3,7 +3,7 @@
 // @layer:presentation
 // @type:tool
 
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Tool } from '#mcp';
 import { z } from 'zod';
 import { KnowledgeService } from './domain/knowledge.service';
@@ -26,6 +26,8 @@ import {
  */
 @Injectable()
 export class KnowledgeTool {
+  private readonly logger = new Logger(KnowledgeTool.name);
+
   constructor(private readonly knowledgeService: KnowledgeService) {}
 
   @Tool({
@@ -35,14 +37,12 @@ export class KnowledgeTool {
     parameters: z.object({}),
   })
   async getStarted() {
-    console.log('\n🎯 [MCP Request] get-started');
-    console.log('   Tool: get-started');
-    console.log('   Description: Critical slice creation rules');
+    this.logger.debug('get-started requested');
 
     const data = await this.knowledgeService.getGettingStarted();
     const dto = new FrameworkArchitectureResponseDto(data);
 
-    console.log('   ✅ Response: Returned slice creation rules');
+    this.logger.debug('get-started: returned slice creation rules');
     return dto.toMcpResponse();
   }
 
@@ -53,12 +53,11 @@ export class KnowledgeTool {
     parameters: z.object({}),
   })
   async listCategories() {
-    console.log('\n🎯 [MCP Request] list-categories');
+    this.logger.debug('list-categories requested');
 
     const categories = await this.knowledgeService.getCategories();
 
-    console.log(`   ✅ Response: Found ${categories.length} categories`);
-    console.log(`   Categories: ${categories.join(', ')}`);
+    this.logger.debug(`list-categories: found ${categories.length} categories`);
 
     return {
       content: [
@@ -119,36 +118,14 @@ export class KnowledgeTool {
     }),
   })
   async search({ query, framework, sliceName, phase, feature, workingOn, category, tags, limit, offset }) {
-    console.log('\n🎯 [MCP Request] search');
-    console.log('   Tool: search');
-    console.log('   Parameters:');
-    if (query) console.log(`     - query: ${query}`);
-    if (framework) console.log(`     - framework: ${framework}`);
-    if (sliceName) console.log(`     - sliceName: ${sliceName}`);
-    if (phase) console.log(`     - phase: ${phase}`);
-    if (feature) console.log(`     - feature: ${feature}`);
-    if (workingOn) console.log(`     - workingOn: ${workingOn}`);
-    if (category) console.log(`     - category: ${category}`);
-    if (tags) console.log(`     - tags: ${tags.join(', ')}`);
-    if (limit) console.log(`     - limit: ${limit}`);
-    if (offset) console.log(`     - offset: ${offset}`);
+    const params = { query, framework, sliceName, phase, feature, workingOn, category, tags, limit, offset };
+    this.logger.debug({ msg: 'search requested', params });
 
-    const { results, total, limit: appliedLimit, offset: appliedOffset } = await this.knowledgeService.search({
-      query,
-      framework,
-      sliceName,
-      phase,
-      feature,
-      workingOn,
-      category,
-      tags,
-      limit,
-      offset,
-    });
+    const { results, total, limit: appliedLimit, offset: appliedOffset } = await this.knowledgeService.search(params);
 
     const dto = new SearchResultsResponseDto(results, { total, limit: appliedLimit, offset: appliedOffset });
 
-    console.log(`   ✅ Response: Returned ${results.length} of ${total} document(s) (offset: ${appliedOffset})`);
+    this.logger.debug(`search: returned ${results.length} of ${total} document(s) (offset: ${appliedOffset})`);
     return dto.toMcpResponse();
   }
 }

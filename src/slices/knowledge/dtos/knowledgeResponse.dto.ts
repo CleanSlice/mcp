@@ -171,6 +171,8 @@ interface IPaginationMeta {
  * Search results response DTO
  */
 export class SearchResultsResponseDto extends BaseMcpResponseDto {
+  private static readonly MAX_TOTAL_CONTENT = 20000;
+
   constructor(
     private readonly results: Array<{
       name: string;
@@ -184,6 +186,20 @@ export class SearchResultsResponseDto extends BaseMcpResponseDto {
     private readonly pagination: IPaginationMeta,
   ) {
     super();
+  }
+
+  private truncateContent(text: string, maxLength: number): { text: string; truncated: boolean } {
+    if (text.length <= maxLength) {
+      return { text, truncated: false };
+    }
+    const truncated = text.slice(0, maxLength);
+    const lastNewline = truncated.lastIndexOf('\n');
+    return {
+      text: lastNewline > maxLength * 0.8
+        ? truncated.slice(0, lastNewline)
+        : truncated,
+      truncated: true,
+    };
   }
 
   toMarkdown(): string {
@@ -222,7 +238,14 @@ export class SearchResultsResponseDto extends BaseMcpResponseDto {
 
       content += `**Path:** \`${doc.path}\`\n\n`;
       content += '**Content:**\n\n';
-      content += doc.content;
+
+      const maxPerDoc = Math.floor(SearchResultsResponseDto.MAX_TOTAL_CONTENT / this.results.length);
+      const { text: docContent, truncated } = this.truncateContent(doc.content, maxPerDoc);
+      content += docContent;
+      if (truncated) {
+        content += '\n\n> **Content truncated.** Use `search` with `limit: 1` and a more specific query to get fuller content.\n';
+      }
+
       content += '\n\n---\n\n';
     });
 
