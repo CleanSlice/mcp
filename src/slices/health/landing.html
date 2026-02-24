@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CleanSlice MCP Server</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cstyle%3E:root{--bg:%23071A22;--l1:%230E3A46;--l2:%231E6E7A;--l3:%233BB9C4;--l4:%236FEFF5}@media(prefers-color-scheme:light){:root{--bg:%23F4FBFC;--l1:%230B2F38;--l2:%23136B76;--l3:%231FB6C1;--l4:%234FD1D9}}%3C/style%3E%3Crect width='64' height='64' rx='14' fill='var(--bg)'/%3E%3Cellipse cx='32' cy='48' rx='20' ry='7' fill='var(--l1)'/%3E%3Cellipse cx='32' cy='38' rx='20' ry='7' fill='var(--l2)'/%3E%3Cellipse cx='32' cy='28' rx='20' ry='7' fill='var(--l3)'/%3E%3Cellipse cx='32' cy='18' rx='20' ry='7' fill='var(--l4)'/%3E%3C/svg%3E">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
@@ -102,7 +103,15 @@
     <section class="pt-20 pb-16 text-center relative">
       <div class="hero-glow"></div>
 
-      <div class="w-[72px] h-[72px] bg-gradient-to-br from-primary to-[#4FA3D1] rounded-[18px] inline-flex items-center justify-center font-extrabold text-[28px] text-white mb-7 shadow-[0_0_40px_rgba(92,198,214,0.2),0_4px_12px_rgba(0,0,0,0.3)] animate-float">CS</div>
+      <div class="mb-7 inline-block animate-float">
+        <svg xmlns="http://www.w3.org/2000/svg" width="72" height="72" viewBox="0 0 64 64" class="rounded-[18px] shadow-[0_0_20px_rgba(0,255,255,0.2),0_0_50px_rgba(0,220,240,0.1),0_4px_12px_rgba(0,0,0,0.3)]">
+          <rect width="64" height="64" rx="14" fill="#071A22"/>
+          <ellipse cx="32" cy="48" rx="20" ry="7" fill="#0E3A46"/>
+          <ellipse cx="32" cy="38" rx="20" ry="7" fill="#1E6E7A"/>
+          <ellipse cx="32" cy="28" rx="20" ry="7" fill="#3BB9C4"/>
+          <ellipse cx="32" cy="18" rx="20" ry="7" fill="#6FEFF5"/>
+        </svg>
+      </div>
 
       <h1 class="text-[2.5rem] max-sm:text-[1.8rem] font-extrabold tracking-tight leading-[1.15] mb-4">
         Teach your AI to build with <span class="gradient-text">CleanSlice</span>
@@ -360,7 +369,13 @@ docker run -p 8080:8080 cleanslice-mcp</pre>
     <div class="max-w-[860px] mx-auto px-6">
       <div class="flex items-center justify-between flex-wrap gap-4">
         <div class="flex items-center gap-2.5 font-bold text-[0.9rem] text-muted-foreground">
-          <div class="w-7 h-7 bg-gradient-to-br from-primary to-[#4FA3D1] rounded-[7px] flex items-center justify-center font-extrabold text-[11px] text-white">CS</div>
+          <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 64 64" class="rounded-[7px]">
+            <rect width="64" height="64" rx="14" fill="#071A22"/>
+            <ellipse cx="32" cy="48" rx="20" ry="7" fill="#0E3A46"/>
+            <ellipse cx="32" cy="38" rx="20" ry="7" fill="#1E6E7A"/>
+            <ellipse cx="32" cy="28" rx="20" ry="7" fill="#3BB9C4"/>
+            <ellipse cx="32" cy="18" rx="20" ry="7" fill="#6FEFF5"/>
+          </svg>
           CleanSlice
         </div>
         <div class="flex gap-6">
