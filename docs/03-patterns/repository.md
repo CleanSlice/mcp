@@ -484,6 +484,14 @@ export class KnowledgeModule {}
 
 ---
 
+## Homogeneous Registries
+
+The examples above wrap distinct external resources (GitHub, S3). Repositories can also form a **homogeneous set** — many repositories with the same shape, aggregated behind one gateway through a multi-provider token, with the gateway adapting each into a single domain contract. This is how you model an interchangeable capability set (a toolset, notification channels, import sources). See [Gateway Pattern -> Gateway Over a Registry of Repositories](./gateway.md).
+
+A repository in such a set does not have to wrap an external service — a **pure in-process capability** (a calculator, a text formatter) is still a self-contained black box: its own fields and types, no imports from `domain/` or `data/`, adapted by the gateway.
+
+---
+
 ## Comparison: Repository vs Gateway
 
 | Aspect | Repository | Gateway |

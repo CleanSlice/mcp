@@ -68,6 +68,12 @@ Services live in the **domain layer** and contain all business logic:
 
 ---
 
+## A Service Can Be an Engine
+
+A service is not always a thin wrapper around CRUD. Because it is simply the slice's business logic, it can be a stateful **engine** — a loop, an orchestrator, a state machine — that injects the gateway and drives it (for example, a loop that repeatedly calls a model and dispatches tools). Name it as the slice's service (`{slice}.service.ts` / `{Slice}Service`) even when it does far more than forward calls. When such an engine is reusable by several consumers, put it in the slice that owns the capability it drives, not in a consumer, so they share one engine.
+
+---
+
 ## Critical Rules
 
 ### 1. Services Depend on Gateway INTERFACES

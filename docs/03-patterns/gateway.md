@@ -60,6 +60,100 @@ production_ready: true
 
 ---
 
+## Gateway Over a Registry of Repositories
+
+A gateway is not limited to one or two named repositories. When a slice offers a **set of interchangeable capabilities** — a toolset an LLM can call, a group of notification channels, several import sources — model each capability as a self-contained repository and let the gateway **orchestrate the whole set**: collect them through a multi-provider token and adapt each into a single domain contract.
+
+```
+                    IToolGateway (domain contract: all(), find(name))
+                            ^ implements
+                        ToolGateway (data)   <- adapts each repo into the domain ITool
+                            | @Inject(TOOL_REPOSITORIES)
+            +---------------+---------------+
+    CurrentTimeToolRepo  CalculatorToolRepo  TextStatsToolRepo   <- self-contained, no domain imports
+```
+
+The repositories stay black boxes (own fields/types, no domain imports — see the [Repository Pattern](./repository.md)). The gateway is the single class that turns them into domain types, exposed as a collection. This also covers a **pure in-process capability** (a calculator, a formatter) — not only external-resource wrappers: it is still a self-contained repository the gateway adapts.
+
+```typescript
+// domain/tool.types.ts — the domain shape the gateway PRODUCES (repos never import this)
+export interface ITool {
+  def: { name: string; description: string; inputSchema: object };
+  execute(input: unknown): Promise<unknown>;
+}
+
+// A multi-provider DI token that collects every tool repository.
+export const TOOL_REPOSITORIES = Symbol('TOOL_REPOSITORIES');
+```
+
+```typescript
+// data/repositories/calculatorTool.repository.ts — self-contained, imports only @nestjs/common
+@Injectable()
+export class CalculatorToolRepository {
+  readonly name = 'calculator';
+  readonly description = 'Evaluate an arithmetic expression.';
+  readonly inputSchema = { type: 'object', properties: { expr: { type: 'string' } } };
+  async run(input: { expr: string }): Promise<number> {
+    return evaluate(input.expr);
+  }
+}
+```
+
+```typescript
+// domain/tool.gateway.ts
+export abstract class IToolGateway {
+  abstract all(): ITool[];
+  abstract find(name: string): ITool | undefined;
+}
+```
+
+```typescript
+// data/tool.gateway.ts — the ONE class that connects the repositories to the domain
+type IToolRepository = {
+  readonly name: string;
+  readonly description: string;
+  readonly inputSchema: object;
+  run(input: unknown): Promise<unknown>;
+};
+
+@Injectable()
+export class ToolGateway extends IToolGateway {
+  constructor(@Inject(TOOL_REPOSITORIES) private readonly repos: IToolRepository[]) {
+    super();
+  }
+
+  all(): ITool[] {
+    return this.repos.map((r) => ({
+      def: { name: r.name, description: r.description, inputSchema: r.inputSchema },
+      execute: (input) => r.run(input),
+    }));
+  }
+
+  find(name: string): ITool | undefined {
+    return this.all().find((t) => t.def.name === name);
+  }
+}
+```
+
+```typescript
+// tool.module.ts — a multi-provider token aggregates the repositories
+const repos = [CurrentTimeToolRepository, CalculatorToolRepository, TextStatsToolRepository];
+
+@Module({
+  providers: [
+    ...repos,
+    { provide: TOOL_REPOSITORIES, useFactory: (...t) => t, inject: repos },
+    { provide: IToolGateway, useClass: ToolGateway },
+  ],
+  exports: [IToolGateway],
+})
+export class ToolModule {}
+```
+
+Adding a capability is one new self-contained repository plus one entry in the token's `inject` list — the gateway and every consumer stay untouched.
+
+---
+
 ## Overview
 
 The Gateway Pattern separates **what** you need (interface) from **how** you get it (implementation):
