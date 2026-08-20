@@ -232,7 +232,11 @@ means these three things are true. It does not mean anything else is.
 
 ## Two traps when wiring it up yourself
 
-Both produce a check that runs, reports, and passes on any code you give it.
+These belong to dependency-cruiser's **Node API**, which is how `cleanslice-check.cjs`
+drives it. The `depcruise` CLI sets both for you, so a project that still runs a
+plain `.dependency-cruiser.cjs` config through the CLI is not affected. Call the
+API yourself and both are easy to miss — each produces a check that runs,
+reports, and passes on any code you give it.
 
 1. **`validate: true`.** Without it dependency-cruiser parses the rule set, echoes
    it back in the result, and never applies it. Every module comes back valid.
