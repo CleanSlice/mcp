@@ -172,7 +172,7 @@ app/
 ### 1. Install Dependencies
 
 ```bash
-npm install -D @nuxtjs/i18n@next
+bun add -d @nuxtjs/i18n@next
 ```
 
 ### 2. Update tsconfig.json

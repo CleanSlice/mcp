@@ -42,7 +42,7 @@ production_ready: true
 
 ## Post-Installation Cleanup
 
-After creating a new Nuxt app with `npx nuxi init`, clean up the default folder structure. **Only `slices/` should exist in the app root**.
+After creating a new Nuxt app with `bunx nuxi init`, clean up the default folder structure. **Only `slices/` should exist in the app root**.
 
 ```bash
 rm -rf components composables pages layouts middleware plugins assets

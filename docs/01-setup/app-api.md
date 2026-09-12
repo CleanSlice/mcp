@@ -45,11 +45,11 @@ The API slice provides **type-safe API integration**:
 ┌──────────────────────────────────────────────────────────────┐
 │  API (NestJS)                                                 │
 │                                                               │
-│  swagger-spec.json  ◄─── npm run swagger:generate (committed) │
+│  swagger-spec.json  ◄─── bun run swagger:generate (committed) │
 │                                                               │
 └──────────────────────────────────────────────────────────────┘
                                │
-                               │  npm run build:api
+                               │  bun run build:api
                                │  (openapi-ts)
                                ▼
 ┌──────────────────────────────────────────────────────────────┐
@@ -88,7 +88,7 @@ For local development, the OpenAPI spec is read from the API project:
 ```
 project/
 ├── api/
-│   └── swagger-spec.json     # Committed; written by `npm run swagger:generate`
+│   └── swagger-spec.json     # Committed; written by `bun run swagger:generate`
 ├── app/
 │   ├── openapi-ts.config.ts  # Points to ../api/swagger-spec.json
 │   └── slices/setup/api/     # Generated SDK output
@@ -161,10 +161,10 @@ openapi-ts.config.ts                # Hey-API configuration
 
 ```bash
 # Hey-API OpenAPI TypeScript generator (client is bundled)
-npm install -D @hey-api/openapi-ts
+bun add -d @hey-api/openapi-ts
 
 # Axios (required peer dependency for the bundled Axios client)
-npm install axios
+bun add axios
 ```
 
 > **Note:** Starting with `@hey-api/openapi-ts` v0.73.0, the `@hey-api/client-axios` package is bundled directly and no longer needs to be installed separately.
@@ -330,8 +330,8 @@ Add to your `package.json`:
 {
   "scripts": {
     "build:api": "openapi-ts",
-    "dev": "npm run build:api && nuxt dev",
-    "build": "npm run build:api && nuxt build"
+    "dev": "bun run build:api && nuxt dev",
+    "build": "bun run build:api && nuxt build"
   }
 }
 ```
@@ -489,7 +489,7 @@ client.setConfig({ baseURL: '...' });
 
 ### When to Regenerate
 
-Run `npm run build:api` when:
+Run `bun run build:api` when:
 
 - Backend API endpoints change
 - DTOs are added or modified
@@ -500,8 +500,8 @@ In every one of those cases the spec has to be refreshed **first** - it is not
 rewritten when the API boots:
 
 ```bash
-cd api && npm run swagger:generate   # refresh the committed spec
-cd app && npm run build:api          # refresh the SDK from it
+cd api && bun run swagger:generate   # refresh the committed spec
+cd app && bun run build:api          # refresh the SDK from it
 ```
 
 Commit both. `build:api` runs inside `dev` and `build`, so a committed SDK that
@@ -513,11 +513,11 @@ file in `git status`.
 ```bash
 # Terminal 1: Run API (serves /api; writes nothing)
 cd api
-npm run start:dev
+bun run start:dev
 
 # Terminal 2: Run App (regenerates SDK, then starts Nuxt)
 cd app
-npm run dev
+bun run dev
 ```
 
 ### CI/CD Considerations
@@ -548,7 +548,7 @@ export default defineConfig({
 
 ### After API Changes
 
-- [ ] Run `npm run build:api` to regenerate SDK
+- [ ] Run `bun run build:api` to regenerate SDK
 - [ ] Check for TypeScript errors from breaking changes
 - [ ] Update component/store code if needed
 

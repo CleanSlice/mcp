@@ -120,8 +120,8 @@ slices/setup/theme/
 
 ```bash
 # All dependencies
-npm install -D @nuxtjs/tailwindcss shadcn-nuxt tailwindcss-animate @tailwindcss/typography sass sass-loader vite-svg-loader @types/webfontloader
-npm install vee-validate @vee-validate/zod zod vaul-vue clsx tailwind-merge lucide-vue-next webfontloader
+bun add -d @nuxtjs/tailwindcss shadcn-nuxt tailwindcss-animate @tailwindcss/typography sass sass-loader vite-svg-loader @types/webfontloader
+bun add vee-validate @vee-validate/zod zod vaul-vue clsx tailwind-merge lucide-vue-next webfontloader
 ```
 
 ---
@@ -395,9 +395,9 @@ Before adding components, ensure the `components.json` file is in your app root:
 cp slices/setup/theme/components.json ./components.json
 ```
 
-### Installing Components with npx
+### Installing Components with bunx
 
-**Always use `npx shadcn-vue@latest add`** to install components. This ensures:
+**Always use `bunx shadcn-vue@latest add`** to install components. This ensures:
 - Components are placed in the correct directory (`slices/setup/theme/components/ui/`)
 - Dependencies are automatically installed
 - TypeScript types are properly configured
@@ -406,16 +406,16 @@ cp slices/setup/theme/components.json ./components.json
 cd app
 
 # Install a single component
-npx shadcn-vue@latest add button
+bunx shadcn-vue@latest add button
 
 # Install multiple components at once
-npx shadcn-vue@latest add card input textarea
+bunx shadcn-vue@latest add card input textarea
 ```
 
 ### Common Components
 
 ```bash
-npx shadcn-vue@latest add card separator scroll-area input textarea select checkbox switch form dropdown-menu navigation-menu tabs breadcrumb alert alert-dialog toast sonner dialog sheet popover tooltip table avatar badge
+bunx shadcn-vue@latest add card separator scroll-area input textarea select checkbox switch form dropdown-menu navigation-menu tabs breadcrumb alert alert-dialog toast sonner dialog sheet popover tooltip table avatar badge
 ```
 
 Full list: https://www.shadcn-vue.com/docs/components
@@ -531,7 +531,7 @@ export function useDarkMode() {
 
 ### For Each Component Added
 
-- [ ] Run `npx shadcn-vue@latest add [component]`
+- [ ] Run `bunx shadcn-vue@latest add [component]`
 - [ ] Component placed in `slices/setup/theme/components/ui/`
 - [ ] Export from component index if needed
 

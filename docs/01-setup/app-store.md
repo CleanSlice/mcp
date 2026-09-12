@@ -143,7 +143,7 @@ slices/{feature}/stores/
 ### Install Dependencies
 
 ```bash
-npm install @pinia/nuxt pinia
+bun add @pinia/nuxt pinia
 ```
 
 ---

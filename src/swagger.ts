@@ -17,8 +17,8 @@ import {
 /**
  * The explicit way to produce `swagger-spec.json`.
  *
- *   npm run swagger:generate   write the spec
- *   npm run swagger:check      fail if the committed spec is stale
+ *   bun run swagger:generate   write the spec
+ *   bun run swagger:check      fail if the committed spec is stale
  *
  * The file is tracked in git, so it is never written while the server boots -
  * that would leave a modified file in the working tree of everyone who has ever
@@ -50,7 +50,7 @@ async function main(): Promise<number> {
 
   console.error(
     `${where} is stale - the server publishes a different contract than the one committed.\n` +
-      `Run \`npm run swagger:generate\` and commit the result.`
+      `Run \`bun run swagger:generate\` and commit the result.`
   );
   return 1;
 }

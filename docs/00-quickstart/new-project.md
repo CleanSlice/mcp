@@ -228,24 +228,25 @@ cd my-project
 
 ```bash
 # CORRECT - Use NestJS CLI
-npx @nestjs/cli new api --package-manager npm --skip-git
+bunx @nestjs/cli new api --skip-install --skip-git
+cd api && bun install
 
 # WRONG - DO NOT USE:
-# npx create-vite api          ❌ WRONG
-# npx create-react-app api     ❌ WRONG
-# npm init express api         ❌ WRONG
+# bunx create-vite api          ❌ WRONG
+# bunx create-react-app api     ❌ WRONG
+# bun create express api       ❌ WRONG
 ```
 
 ## Step 3: Initialize App (Nuxt)
 
 ```bash
 # CORRECT - Use Nuxt CLI
-npx nuxi init app
+bunx nuxi init app
 
 # WRONG - DO NOT USE:
-# npx create-vite app          ❌ WRONG
-# npx create-next-app app      ❌ WRONG
-# npx create-react-app app     ❌ WRONG
+# bunx create-vite app          ❌ WRONG
+# bunx create-next-app app      ❌ WRONG
+# bunx create-react-app app     ❌ WRONG
 ```
 
 ## Step 4: Create Slices Folders
@@ -439,7 +440,7 @@ import { AuthService, UserDto } from '#api';
 
 ### API Project (NestJS)
 
-- [ ] Run `npx @nestjs/cli new api --package-manager npm --skip-git`
+- [ ] Run `bunx @nestjs/cli new api --skip-install --skip-git`, then `bun install`
 - [ ] Create `api/src/slices/` folder
 - [ ] Configure Prisma ([api-prisma.md](../01-setup/api-prisma.md))
 - [ ] Setup Swagger ([api-swagger.md](../01-setup/api-swagger.md))
@@ -448,7 +449,7 @@ import { AuthService, UserDto } from '#api';
 
 ### App Project (Nuxt)
 
-- [ ] Run `npx nuxi init app`
+- [ ] Run `bunx nuxi init app`
 - [ ] Create `app/slices/` folder
 - [ ] Setup theme slice ([app-theme.md](../01-setup/app-theme.md))
 - [ ] Setup Pinia store ([app-store.md](../01-setup/app-store.md))
@@ -632,8 +633,8 @@ export default defineNuxtConfig({
 
 - **Create PLAN.md BEFORE starting any project setup**
 - **Use existing approval or ask if missing before running any setup commands**
-- **Use `npx @nestjs/cli new api` for backend** - NestJS only
-- **Use `npx nuxi init app` for frontend** - Nuxt only
+- **Use `bunx @nestjs/cli new api` for backend** - NestJS only
+- **Use `bunx nuxi init app` for frontend** - Nuxt only
 - **Put ALL code in `slices/` folders** (`api/src/slices/`, `app/slices/`)
 - Create `domain/`, `data/`, `dtos/` folders in API slices
 - Create `Provider.vue` in every component folder

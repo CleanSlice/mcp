@@ -235,7 +235,7 @@ Create `.vscode/extensions.json` for team recommendations:
 
 1. Ensure Prisma extension is installed
 2. Set Prisma as default formatter for `.prisma` files
-3. Run `npx prisma format` manually if needed
+3. Run `bunx prisma format` manually if needed
 
 ### ESLint Not Finding Config
 

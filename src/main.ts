@@ -41,7 +41,7 @@ async function bootstrap() {
   );
 
   // Served, not written. `swagger-spec.json` is tracked in git and is produced
-  // by `npm run swagger:generate` - writing it here modified a tracked file
+  // by `bun run swagger:generate` - writing it here modified a tracked file
   // every time anyone started the server in dev.
   const document = buildOpenApiDocument(app);
   SwaggerModule.setup("api", app, document, {

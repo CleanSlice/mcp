@@ -48,7 +48,7 @@ production_ready: true
 ## Installation
 
 ```bash
-pnpm add inversify reflect-metadata
+bun add inversify reflect-metadata
 ```
 
 **Required TypeScript configuration** (`tsconfig.json`):

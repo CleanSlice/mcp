@@ -137,7 +137,7 @@ async function bootstrap() {
   // ============================================
 
   // Served, not written. `swagger-spec.json` is tracked in git and is produced
-  // by `npm run swagger:generate` - writing it here would modify a tracked file
+  // by `bun run swagger:generate` - writing it here would modify a tracked file
   // every time anyone starts the API.
   SwaggerModule.setup('api', app, buildOpenApiDocument(app));
 
@@ -171,14 +171,14 @@ Starting the API serves the document at `/api`; it never writes the file.
 ```json
 {
   "scripts": {
-    "swagger:generate": "npm run build && node dist/swagger.js",
-    "swagger:check": "npm run build && node dist/swagger.js --check"
+    "swagger:generate": "bun run build && node dist/swagger.js",
+    "swagger:check": "bun run build && node dist/swagger.js --check"
   }
 }
 ```
 
 Change a controller, a DTO or a route and the spec is stale until you run
-`npm run swagger:generate` and commit the result - then `cd app && npm run
+`bun run swagger:generate` and commit the result - then `cd app && bun run
 build:api` to refresh the SDK, and commit that too.
 
 Why it is not written on boot: the file is tracked, so a write in `bootstrap()`
@@ -242,7 +242,7 @@ Each slice can define its own Prisma schema fragment. The `prisma-import` tool m
 **Install:**
 
 ```bash
-npm install -D prisma-import
+bun add -d prisma-import
 ```
 
 **prisma/schema.prisma** (base):
@@ -282,11 +282,11 @@ model User {
 ```json
 {
   "scripts": {
-    "generate": "npx prisma-import --force",
-    "premigrate": "npx prisma-import --force",
-    "migrate": "dotenv -e .env.dev -- npx prisma migrate dev && dotenv -e .env.dev -- npx prisma generate",
-    "migrate:prod": "dotenv -e .env.prod -- npx prisma migrate deploy",
-    "studio": "dotenv -e .env.dev -- npx prisma studio"
+    "generate": "bunx prisma-import --force",
+    "premigrate": "bunx prisma-import --force",
+    "migrate": "dotenv -e .env.dev -- bunx prisma migrate dev && dotenv -e .env.dev -- bunx prisma generate",
+    "migrate:prod": "dotenv -e .env.prod -- bunx prisma migrate deploy",
+    "studio": "dotenv -e .env.dev -- bunx prisma studio"
   }
 }
 ```
@@ -294,8 +294,8 @@ model User {
 **Workflow:**
 
 1. Edit slice-specific `.prisma` files
-2. Run `npm run migrate` - merges schemas, creates migration, generates client
-3. Use `npm run studio` to view data in Prisma Studio
+2. Run `bun run migrate` - merges schemas, creates migration, generates client
+3. Use `bun run studio` to view data in Prisma Studio
 
 ## docker-compose.yml
 
@@ -533,7 +533,7 @@ import { PrismaService } from '#/setup/prisma/prisma.service';
 
 **Why `#` instead of `@`?**
 
-- `@` is commonly used for scoped npm packages (`@nestjs/common`)
+- `@` is commonly used for scoped packages (`@nestjs/common`)
 - `#` is unique and clearly indicates internal slice imports
 - Avoids confusion with external dependencies
 
@@ -548,7 +548,7 @@ These compiler options are required for NestJS decorators:
 
 ```bash
 # 1. Install dependencies
-npm install
+bun install
 
 # 2. Copy environment file
 cp .env.example .env.dev
@@ -557,10 +557,10 @@ cp .env.example .env.dev
 docker-compose up -d
 
 # 4. Run database migrations
-npm run migrate
+bun run migrate
 
 # 5. Start development server
-npm run start:dev
+bun run start:dev
 
 # 6. Open Swagger UI
 open http://localhost:3000/api

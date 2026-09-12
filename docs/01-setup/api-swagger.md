@@ -63,7 +63,7 @@ Swagger integrates with your NestJS API to provide **documentation and SDK gener
               ▼                                 ▼
 ┌─────────────────────────┐      ┌─────────────────────────────┐
 │  Swagger UI (/api)      │      │  swagger-spec.json          │
-│  served by main.ts      │      │  npm run swagger:generate   │
+│  served by main.ts      │      │  bun run swagger:generate   │
 │  - Interactive docs     │      │  - Committed to git         │
 │  - Try endpoints        │      │  - Input for the app SDK    │
 └─────────────────────────┘      └─────────────────────────────┘
@@ -133,7 +133,7 @@ the process happened to be launched from.
 The damage is not to the spec, it is to everyone else's `git status`: a file
 nobody edited turns up modified, and it gets either committed by accident or
 spends someone's afternoon being explained. Export it with
-[`npm run swagger:generate`](#exporting-the-spec) instead.
+[`bun run swagger:generate`](#exporting-the-spec) instead.
 
 ---
 
@@ -166,7 +166,7 @@ api/
 ## Installation
 
 ```bash
-npm install @nestjs/swagger swagger-ui-express
+bun add @nestjs/swagger swagger-ui-express
 ```
 
 ---
@@ -192,7 +192,7 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
 
-  // Served, not written. The file comes from `npm run swagger:generate`.
+  // Served, not written. The file comes from `bun run swagger:generate`.
   SwaggerModule.setup('api', app, buildOpenApiDocument(app), {
     swaggerOptions: { persistAuthorization: true },
   });
@@ -276,8 +276,8 @@ import {
 } from './slices/setup/swagger';
 
 /**
- *   npm run swagger:generate   write the spec
- *   npm run swagger:check      fail if the committed spec is stale
+ *   bun run swagger:generate   write the spec
+ *   bun run swagger:check      fail if the committed spec is stale
  *
  * The app is created but never started: `NestFactory.create` alone is enough to
  * explore the routes, and it skips `onModuleInit`, so no queue worker or
@@ -304,7 +304,7 @@ async function main(): Promise<number> {
   }
 
   console.error(
-    `${where} is stale. Run \`npm run swagger:generate\` and commit the result ` +
+    `${where} is stale. Run \`bun run swagger:generate\` and commit the result ` +
       `(the frontend SDK is generated from this file).`,
   );
   return 1;
@@ -326,8 +326,8 @@ void main().then(
 ```json
 {
   "scripts": {
-    "swagger:generate": "npm run build && node dist/swagger.js",
-    "swagger:check": "npm run build && node dist/swagger.js --check"
+    "swagger:generate": "bun run build && node dist/swagger.js",
+    "swagger:check": "bun run build && node dist/swagger.js --check"
   }
 }
 ```
@@ -358,8 +358,8 @@ Keep it out of the lint/build gate: it boots the Nest app, so it needs the API's
 The two artifacts are committed and neither refreshes itself:
 
 ```bash
-cd api && npm run swagger:generate   # refresh the spec
-cd app && npm run build:api          # refresh the SDK from that spec
+cd api && bun run swagger:generate   # refresh the spec
+cd app && bun run build:api          # refresh the SDK from that spec
 git add api/swagger-spec.json app/slices/setup/api/data/repositories/api
 ```
 

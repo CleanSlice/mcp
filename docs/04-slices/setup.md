@@ -209,7 +209,7 @@ Configures the API client base URL via `useRuntimeConfig()` and sets up response
 #### SDK Generation
 
 ```bash
-npm run build:api
+bun run build:api
 ```
 
 Uses `openapi-ts.config.ts` at the app root. See [App API Setup](../01-setup/app-api.md) for full config.
