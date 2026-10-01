@@ -61,7 +61,7 @@ Located at: `app/slices/setup/`
 |-------|---------|--------------|
 | `theme/` | UI components, Tailwind CSS, Shadcn Vue | tailwindcss, shadcn-vue |
 | `pinia/` | State management configuration | @pinia/nuxt |
-| `api/` | API SDK generation and HTTP client | @hey-api/openapi-ts, axios |
+| `api/` | API SDK generation and HTTP client | @hey-api/openapi-ts (bundles client-axios), axios |
 | `error/` | Error handling, toast notifications | pinia, i18n |
 | `i18n/` | Internationalization | @nuxtjs/i18n |
 
@@ -174,14 +174,15 @@ Stores are auto-imported across all slices: `const authStore = useAuthStore();`
 ```
 app/slices/setup/api/
 ├── nuxt.config.ts
-├── api.config.ts               # Axios client setup + interceptors
-├── plugins/api.ts
+├── plugins/api.ts              # Client config via useRuntimeConfig() + interceptors
 ├── utils/handleApiAuthentication.ts
 └── data/repositories/api/      # Generated SDK (do not edit)
-    ├── index.ts
-    ├── services.gen.ts
+    ├── client/                 # Client utilities (bundled @hey-api/client-axios)
+    ├── client.gen.ts           # Client instance
+    ├── core/                   # Core utilities
+    ├── sdk.gen.ts              # SDK functions
     ├── types.gen.ts
-    └── ...
+    └── index.ts
 ```
 
 #### nuxt.config.ts
@@ -194,29 +195,30 @@ const currentDir = dirname(fileURLToPath(import.meta.url));
 export default defineNuxtConfig({
   alias: { '#api': resolve(currentDir, 'data/repositories/api') },
   runtimeConfig: {
-    public: { apiUrl: process.env.API_URL || 'http://localhost:4000' },
+    public: {
+      apiUrl: 'http://localhost:4000',
+    },
   },
 });
 ```
 
-#### api.config.ts
+#### plugins/api.ts
 
-Sets up the Axios-based API client with request interceptor (attaches `Bearer` token from cookie) and response interceptor (handles 401 / token refresh). See the generated `client` from `#api`.
+Configures the API client base URL via `useRuntimeConfig()` and sets up response interceptors for error handling. The `client` instance from `client.gen.ts` exposes an `instance` property (AxiosInstance) for adding interceptors.
 
 #### SDK Generation
 
 ```bash
-npx @hey-api/openapi-ts \
-  -i http://localhost:4000/api-json \
-  -o app/slices/setup/api/data/repositories/api \
-  -c axios
+npm run build:api
 ```
+
+Uses `openapi-ts.config.ts` at the app root. See [App API Setup](../01-setup/app-api.md) for full config.
 
 #### Usage
 
 ```typescript
-import { AuthService } from '#api';
-const user = await AuthService.login({ email, password });
+import { login } from '#api';
+const { data } = await login({ body: { email, password } });
 ```
 
 ---
@@ -291,7 +293,7 @@ export const useError = () => {
 
 ```typescript
 const { handleAsync } = useError();
-const result = await handleAsync(() => UsersService.createUser(data), { showToast: true, errorKey: 'createUser' });
+const result = await handleAsync(() => createUser({ body: data }), { showToast: true, errorKey: 'createUser' });
 ```
 
 ---
@@ -358,9 +360,16 @@ Located at: `api/src/slices/`
 |-------|---------|--------------|
 | `prisma/` | Database ORM and connection | @prisma/client |
 | `core/` | Decorators, interceptors, error handling | - |
+| `swagger/` | The OpenAPI document: served at `/api`, exported by command | @nestjs/swagger |
 | `aws/` | AWS services (S3, Cognito, etc.) | @aws-sdk/* |
 | `redis/` | Cache and session storage | redis |
 | `health/` | Health check endpoint | - |
+
+`swagger/` holds pure functions, not providers, so it has no module and nothing
+imports it in `app.module.ts` - `main.ts` and `src/swagger.ts` import it
+directly. It exists so that the document served at `/api` and the committed
+`swagger-spec.json` come from one `DocumentBuilder`. See
+[Swagger Setup (API)](../01-setup/api-swagger.md#exporting-the-spec).
 
 ### Registration
 

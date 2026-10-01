@@ -31,7 +31,7 @@ production_ready: true
 
 # New Feature Workflow
 
-> **CRITICAL: Create PLAN.md file BEFORE writing ANY code.** Present plan to user and get explicit approval. No exceptions.
+> **CRITICAL: Create PLAN.md file BEFORE writing ANY code.** Present plan to user and get explicit approval. Existing user authorization or an approved task satisfies this approval; do not request it again.
 
 ---
 
@@ -52,7 +52,7 @@ production_ready: true
 ║   search(query: "nuxt standards")                               ║
 ║                                                                 ║
 ║   READ THE RETURNED DOCS. They tell you:                        ║
-║   - Gateway pattern (NOT Repository)                            ║
+║   - Gateway for DB; Repository for adapters                            ║
 ║   - domain/, data/, dtos/ folder structure                      ║
 ║   - Provider.vue component pattern                              ║
 ║   - Prisma IS the repository (no UserRepository)                ║
@@ -88,13 +88,13 @@ production_ready: true
 ║   2. READ the returned docs                                     ║
 ║                                                                 ║
 ║   3. CREATE PLAN.md based on what you read                      ║
-║      - Use Gateway pattern (NOT Repository)                     ║
+║      - Use Gateway for DB; Repository for adapters                     ║
 ║      - Use domain/, data/, dtos/ structure                      ║
 ║      - NOT React, Vite, Repository, hooks/                      ║
 ║                                                                 ║
 ║   4. PRESENT plan to user                                       ║
 ║                                                                 ║
-║   5. WAIT for explicit approval                                 ║
+║   5. Verify scope is already authorized                                 ║
 ║                                                                 ║
 ║   6. Only then start writing code                               ║
 ║                                                                 ║
@@ -123,7 +123,7 @@ production_ready: true
 ┌─────────────────────────────────────────────────────────────────┐
 │  3. CONFIRM                                                      │
 │  ─────────────────────────────────────────────────────────────  │
-│  Present plan to user, wait for approval                         │
+│  Present plan to user, ask only if not authorized                         │
 └─────────────────────────────────────────────────────────────────┘
                                │
                                ▼
@@ -330,9 +330,9 @@ model Message {
 ║   ❌ "TypeORM"         → Must use Prisma                        ║
 ║                                                                 ║
 ║   WRONG PATTERNS (CRITICAL):                                    ║
-║   ❌ "chat.repository.ts" → Must be "chat.gateway.ts"           ║
+║   DB access: chat.gateway.ts; adapters may use repository.ts           ║
 ║   ❌ "UserRepository"  → Prisma IS the repository, use Gateway  ║
-║   ❌ ".repository.ts"  → Use ".gateway.ts" (Gateway pattern)    ║
+║   Extra DB repository → Gateway; adapters may be repositories    ║
 ║   ❌ "useChat.ts"      → Must be "stores/chat.ts" (Pinia)       ║
 ║   ❌ "composables/useXxx" → Must be "stores/xxx.ts"             ║
 ║                                                                 ║
@@ -369,7 +369,7 @@ model Message {
 
 ## Phase 3: Confirm
 
-**Get approval at TWO stages:**
+**Check authorization at both planning stages; existing approval carries forward:**
 
 ### Stage 1: Approve High-Level Plan (Phase 2)
 
@@ -403,7 +403,7 @@ After approval, I will detail the file structure.
 - [ ] The components follow Provider.vue pattern
 ```
 
-**Wait for explicit approval at BOTH stages before implementing.**
+**Request approval only for a scope or decision not already authorized.**
 
 ---
 
@@ -583,7 +583,7 @@ Ready for your review.
 | 4. Implement | Follow standards | Working code |
 | 5. Verify | Test + validate | Confirmed feature |
 
-**Never skip Phase 3 (Confirm).** Always get user approval before implementing.
+**Confirm scope against the existing authorization.** Ask only for missing authorization or a material scope change.
 
 ---
 

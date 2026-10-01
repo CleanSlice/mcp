@@ -35,7 +35,7 @@ production_ready: true
 
 # New Project Setup
 
-> **CRITICAL: Create PLAN.md BEFORE setting up ANY project.** Document what will be created and get user approval first. No exceptions.
+> **CRITICAL: Create PLAN.md BEFORE setting up ANY project.** Document what will be created and use existing approval or ask if missing first. Existing user authorization or an approved task satisfies this approval; do not request it again.
 
 ---
 
@@ -56,7 +56,7 @@ production_ready: true
 ║   search(query: "new project setup")                            ║
 ║                                                                 ║
 ║   READ THE RETURNED DOCS. They tell you:                        ║
-║   - Gateway pattern (NOT Repository)                            ║
+║   - Gateway for DB; Repository for adapters                            ║
 ║   - domain/, data/, dtos/ folder structure                      ║
 ║   - Provider.vue component pattern                              ║
 ║   - Prisma IS the repository (no UserRepository)                ║
@@ -110,13 +110,13 @@ production_ready: true
 ║   - List slices and responsibilities                            ║
 ║   - Describe what each slice does                               ║
 ║   - NO file names, NO component names                           ║
-║   - Get user approval                                           ║
+║   - Use existing approval or ask if missing                                           ║
 ║                                                                 ║
 ║   PHASE 2: DETAILED PLAN (after Phase 1 approval)               ║
 ║   - List exact file paths                                       ║
 ║   - Define component names                                      ║
 ║   - Write database schema                                       ║
-║   - Get user approval                                           ║
+║   - Use existing approval or ask if missing                                           ║
 ║                                                                 ║
 ╚═════════════════════════════════════════════════════════════════╝
 ```
@@ -171,10 +171,10 @@ production_ready: true
 ║   ❌ "InversifyJS"     → NestJS has built-in DI                 ║
 ║                                                                 ║
 ║   WRONG PATTERNS (CRITICAL):                                    ║
-║   ❌ "chat.repository.ts" → Must be "chat.gateway.ts"           ║
+║   DB access: chat.gateway.ts; adapters may use repository.ts           ║
 ║   ❌ "UserRepository"  → Prisma IS the repository, use Gateway  ║
 ║   ❌ "ChatRepository"  → Use ChatGateway instead                ║
-║   ❌ ".repository.ts"  → Use ".gateway.ts" (Gateway pattern)    ║
+║   Extra DB repository → Gateway; adapters may be repositories    ║
 ║   ❌ "useChat.ts"      → Must be "stores/chat.ts" (Pinia)       ║
 ║   ❌ "composables/useXxx" → Must be "stores/xxx.ts"             ║
 ║   ❌ "Service interface" → Use abstract class instead           ║
@@ -631,7 +631,7 @@ export default defineNuxtConfig({
 ## Always Do
 
 - **Create PLAN.md BEFORE starting any project setup**
-- **Get user approval before running any setup commands**
+- **Use existing approval or ask if missing before running any setup commands**
 - **Use `npx @nestjs/cli new api` for backend** - NestJS only
 - **Use `npx nuxi init app` for frontend** - Nuxt only
 - **Put ALL code in `slices/` folders** (`api/src/slices/`, `app/slices/`)

@@ -156,8 +156,8 @@ export default defineNuxtConfig({
 ### API SDK (Generated Types and Services)
 
 ```typescript
-import { AuthService, UserDto, LoginUserDto } from '#api';
-const user = await AuthService.login(credentials);
+import { login, type UserDto, type LoginUserDto } from '#api';
+const { data } = await login({ body: credentials });
 ```
 
 ### External Libraries
@@ -324,7 +324,7 @@ slices/user/auth/pages/
 ```typescript
 // slices/user/auth/stores/auth.ts
 import { defineStore } from 'pinia';
-import { AuthDto, AuthService } from '#api';
+import { login, type AuthDto } from '#api';
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
@@ -341,7 +341,7 @@ export const useAuthStore = defineStore('auth', {
     async login(credentials: LoginUserDto): Promise<boolean> {
       this.loading = true;
       try {
-        const response = await AuthService.login(credentials);
+        const response = await login({ body: credentials });
         this.auth = response.data;
         return true;
       } catch (error) {
@@ -401,6 +401,10 @@ export const useError = () => {
 
 Composables are auto-imported from any slice's `composables/` folder -- no import statement needed.
 
+::: tip Composable vs. `*.logic.ts`
+Composables own **reactive** logic (state, effects, lifecycle). Pure, branch-heavy **decision** logic (state-transition tables, backend mirrors) belongs in a sibling `*.logic.ts` file so it can be unit-tested without Vue. See [Component Logic (Humble Object)](./component-logic.md).
+:::
+
 ---
 
 ## 8. Component Standards
@@ -450,9 +454,9 @@ slices/user/account/components/
 ```vue
 <!-- slices/user/account/components/account/Provider.vue -->
 <script lang="ts" setup>
-import { AuthService } from '#api';
+import { me } from '#api';
 
-const { data, pending, error, refresh } = useAsyncData('account', () => AuthService.me());
+const { data, pending, error, refresh } = useAsyncData('account', () => me());
 </script>
 
 <template>
@@ -502,7 +506,7 @@ defineProps<{ user: UserDto; pending: boolean }>();
 import { useForm } from 'vee-validate';
 import { toTypedSchema } from '@vee-validate/zod';
 import * as z from 'zod';
-import { UsersService, UpdateUserDto, UserDto } from '#api';
+import { updateUser, type UpdateUserDto, type UserDto } from '#api';
 
 const props = defineProps<{ user: UserDto }>();
 const emits = defineEmits<{ (e: 'update', value: any): void }>();
@@ -518,8 +522,8 @@ const form = useForm({ validationSchema: toTypedSchema(formSchema) });
 const submit = form.handleSubmit(async (values) => {
   loading.value = true;
   try {
-    const result = await UsersService.updateUser({
-      id: props.user.id, requestBody: values as UpdateUserDto,
+    const result = await updateUser({
+      path: { id: props.user.id }, body: values as UpdateUserDto,
     });
     isOpen.value = false;
     emits('update', result);
@@ -647,6 +651,7 @@ definePageMeta({ layout: 'dashboard', auth: { public: false } });
 
 ## Related Documentation
 
+- [Component Logic (Humble Object)](./component-logic.md) - Pure `*.logic.ts` decision files vs. composables
 - [TypeScript Standards](./ts-standards.md) - General TS rules
 - [Theme Setup](../01-setup/app-theme.md) - UI components
 - [Store Setup](../01-setup/app-store.md) - Pinia configuration

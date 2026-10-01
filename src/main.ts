@@ -1,9 +1,9 @@
 import { NestFactory } from "@nestjs/core";
-import { SwaggerModule, DocumentBuilder } from "@nestjs/swagger";
+import { SwaggerModule } from "@nestjs/swagger";
 import { AppModule } from "./app.module";
+import { buildOpenApiDocument } from "./slices/setup/swagger";
 import { ValidationPipe } from "@nestjs/common";
 import helmet from "helmet";
-import * as fs from "fs";
 
 async function bootstrap() {
   const isDev = process.env.NODE_ENV === "dev";
@@ -40,14 +40,10 @@ async function bootstrap() {
     })
   );
 
-  const config = new DocumentBuilder()
-    .setTitle("CleanSlice MCP Server")
-    .setVersion("1.0")
-    .addTag("api")
-    .addTag("mcp")
-    .addServer("/")
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
+  // Served, not written. `swagger-spec.json` is tracked in git and is produced
+  // by `npm run swagger:generate` - writing it here modified a tracked file
+  // every time anyone started the server in dev.
+  const document = buildOpenApiDocument(app);
   SwaggerModule.setup("api", app, document, {
     swaggerOptions: {
       persistAuthorization: true,
@@ -59,10 +55,6 @@ async function bootstrap() {
     res.setHeader("Content-Type", "application/json");
     res.send(document);
   });
-
-  if (process.env.NODE_ENV === "dev") {
-    fs.writeFileSync("./swagger-spec.json", JSON.stringify(document));
-  }
 
   const port = process.env.PORT ?? 8080;
   console.log(`Listening on port ${port}`);

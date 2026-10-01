@@ -52,7 +52,7 @@ production_ready: true
 ║   WRONG: UserRepository -> UserGateway -> Prisma                ║
 ║   RIGHT: UserGateway -> Prisma (directly)                       ║
 ║                                                                 ║
-║   Repository is ONLY for external services:                     ║
+║   Repositories wrap independent sources/capabilities:                     ║
 ║   - GitHubRepository - wraps GitHub API                         ║
 ║   - S3Repository - wraps AWS S3 SDK                             ║
 ║   - StripeRepository - wraps Stripe SDK                         ║

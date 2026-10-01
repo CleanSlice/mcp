@@ -44,7 +44,7 @@ production_ready: true
 ╔═════════════════════════════════════════════════════════════════╗
 ║                                                                 ║
 ║   Use GATEWAY for database access (Prisma IS the repository)   ║
-║   Use REPOSITORY only for external API wrappers                 ║
+║   Use REPOSITORY for independent adapters/capabilities                 ║
 ║                                                                 ║
 ║   Prisma (auto-generated in node_modules) already provides      ║
 ║   the repository abstraction. Don't add another layer.          ║

@@ -158,9 +158,14 @@ export default defineNuxtConfig({
   devtools: { enabled: false },
   extends: [...registerSlices()],
   ssr: false,
+  runtimeConfig: {
+    public: {
+      apiUrl: 'http://localhost:3333',
+      useMocks: 'false',
+    },
+  },
   vite: {
     define: {
-      'process.env': process.env,
       __VUE_I18N_FULL_INSTALL__: true,
       __VUE_I18N_LEGACY_API__: false,
       __INTLIFY_PROD_DEVTOOLS__: false,
@@ -313,9 +318,11 @@ export default defineNuxtConfig({
 **Reference:** [setup/api](https://github.com/Dreamvention/cleanslice/tree/main/app/slices/setup/api) | [openapi-ts.config.ts](https://github.com/Dreamvention/cleanslice/blob/main/app/openapi-ts.config.ts)
 
 ```bash
-npm i @hey-api/client-axios axios
+npm i axios
 npm i -D @hey-api/openapi-ts
 ```
+
+> **Note:** Starting with `@hey-api/openapi-ts` v0.73+, `@hey-api/client-axios` is bundled and does not need separate installation.
 
 **openapi-ts.config.ts (root):**
 
@@ -323,21 +330,15 @@ npm i -D @hey-api/openapi-ts
 import { defineConfig } from '@hey-api/openapi-ts';
 
 export default defineConfig({
-  name: 'ApiClient',
   input: '../api/swagger-spec.json',
   output: {
-    format: 'prettier',
-    lint: 'eslint',
     path: './slices/setup/api/data/repositories/api',
   },
+  postProcess: ['prettier'],
   plugins: [
-    {
-      name: '@hey-api/client-axios',
-      runtimeConfigPath: './slices/setup/api/api.config.ts',
-    },
-    { enums: 'typescript', name: '@hey-api/typescript' },
-    { name: '@hey-api/schemas', type: 'json' },
-    { name: '@hey-api/sdk', asClass: true },
+    '@hey-api/typescript',
+    '@hey-api/sdk',
+    '@hey-api/client-axios',
   ],
 });
 ```
@@ -358,6 +359,15 @@ export default defineConfig({
 npm run build:api
 ```
 
+> **Both artifacts are committed, and neither refreshes itself.**
+> `../api/swagger-spec.json` is written by `npm run swagger:generate` in the API
+> ([Swagger Setup](../01-setup/api-swagger.md#exporting-the-spec)), and the SDK
+> under `slices/setup/api/data/repositories/api/` is written by `build:api`.
+> Regenerate the spec, regenerate the SDK, commit both. Skip the second step and
+> `build:api` - which runs inside `dev` and `build` - rewrites the tracked SDK
+> every time anyone starts the frontend, leaving a modified file in `git status`
+> that nobody edited.
+
 **nuxt.config.ts:**
 
 ```typescript
@@ -373,34 +383,25 @@ export default defineNuxtConfig({
 });
 ```
 
-**api.config.ts:**
-
-```typescript
-import type { CreateClientConfig } from './data/repositories/api/client.gen';
-
-export const createClientConfig: CreateClientConfig = (config) => ({
-  ...config,
-  baseURL: process.env.API_URL ?? 'http://localhost:3333',
-});
-```
-
 **plugins/api.ts:**
 
 ```typescript
 import { client } from '../data/repositories/api/client.gen';
-import { defineNuxtPlugin } from '#app';
-import { AxiosError, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
 
-export default defineNuxtPlugin((nuxtApp) => {
-  client.instance.interceptors.request.use(
-    (config: InternalAxiosRequestConfig) => config,
-    (error: AxiosError) => handleError(error),
-  );
+export default defineNuxtPlugin(() => {
+  const { apiUrl } = useRuntimeConfig().public;
+
+  client.setConfig({
+    baseURL: apiUrl as string,
+  });
+
   client.instance.interceptors.response.use(
-    (response: AxiosResponse) => response,
-    (error: AxiosError) => handleError(error),
+    (response) => response,
+    (error) => {
+      handleError(error);
+      return Promise.reject(error);
+    },
   );
-  return { provide: { client } };
 });
 ```
 
@@ -408,10 +409,15 @@ export default defineNuxtPlugin((nuxtApp) => {
 
 ```
 slices/setup/api/data/repositories/api/
-├── client.gen.ts
-├── sdk.gen.ts
-├── types.gen.ts
-└── schemas.gen.ts
+├── client/                # Client utilities (bundled @hey-api/client-axios)
+│   ├── client.gen.ts
+│   ├── types.gen.ts
+│   └── utils.gen.ts
+├── client.gen.ts          # Client instance (import { client } from here)
+├── core/                  # Core utilities
+├── sdk.gen.ts             # SDK functions (getUsers, createUser, etc.)
+├── types.gen.ts           # TypeScript types
+└── index.ts               # Re-exports
 ```
 
 ---
@@ -606,7 +612,7 @@ export default defineNuxtConfig({
 | Add state store | `{slice}/stores/{name}.ts` |
 | Add translations | `{slice}/locales/{lang}.json` + nuxt.config.ts |
 | Add UI component | Use from `#theme/components/ui/` |
-| Configure API base URL | `setup/api/api.config.ts` |
+| Configure API base URL | `setup/api/plugins/api.ts` via `useRuntimeConfig()` |
 | Handle API errors | `setup/error/utils/handleError.ts` |
 | Add auth interceptor | `setup/api/plugins/api.ts` |
 
@@ -620,16 +626,18 @@ WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm install
 COPY . .
-ARG API_URL
-RUN API_URL=${API_URL} npm run build
+ARG NUXT_PUBLIC_API_URL
+RUN NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL} npm run build
 EXPOSE 3000
 CMD ["npm", "run", "start"]
 ```
 
 ```bash
-docker build --build-arg API_URL=https://api.example.com -t app .
+docker build --build-arg NUXT_PUBLIC_API_URL=https://api.example.com -t app .
 docker run -p 3000:3000 app
 ```
+
+> **Note:** Nuxt automatically maps `NUXT_PUBLIC_*` env vars to `runtimeConfig.public.*` at build time. Never pass `process.env` to Vite's `define` — it exposes all environment variables to the client bundle.
 
 **Reference:** [Dockerfile](https://github.com/Dreamvention/cleanslice/blob/main/app/Dockerfile)
 

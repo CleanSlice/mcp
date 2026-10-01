@@ -30,39 +30,21 @@ export class KnowledgeGateway implements IKnowledgeGateway {
   ) {}
 
   async getGettingStarted(): Promise<IFrameworkArchitectureData> {
-    // First, try to find the rules document specifically
-    const rulesSearch = await this.search({
-      query: 'get-started',
-      category: 'quickstart',
-      limit: 10,
-    });
-
-    // Find the rules document
-    const rulesDoc = rulesSearch.results.find(
-      (r) => r.path.includes('rules') || r.name.toLowerCase().includes('rules')
-    );
-
-    if (rulesDoc) {
-      // Load full content via readDocument (search only returns snippets)
-      const fullContent = await this.readDocument(rulesDoc.path);
-      return {
-        frameworkName: 'CleanSlice Architecture',
-        documentation: {
-          overview: fullContent || rulesDoc.snippets.join('\n\n'),
-          whenToUse: '',
-          checklist: '',
-        },
-      };
+    // Startup rules are a contract, not a ranked search result. The canonical
+    // document is named get-started.md (not rules.md).
+    const path = '00-quickstart/get-started.md';
+    const content = await this.readDocument(path);
+    if (!content?.trim()) {
+      throw new Error(`Required CleanSlice documentation unavailable: ${path}`);
     }
-
-    // Fallback to general quickstart search
-    const fallback = await this.search({
-      phase: 'initialization',
-      category: 'quickstart',
-      limit: 10,
-    });
-
-    return this.transformToFrameworkArchitecture(fallback.results, 'CleanSlice Architecture');
+    return {
+      frameworkName: 'CleanSlice',
+      documentation: {
+        overview: `Source: ${path}\n\n${content}`,
+        whenToUse: '',
+        checklist: '',
+      },
+    };
   }
 
   async search(query: IDocumentSearchQuery): Promise<IPaginatedSearchResult> {
@@ -168,35 +150,4 @@ export class KnowledgeGateway implements IKnowledgeGateway {
     return filename;
   }
 
-  private transformToFrameworkArchitecture(
-    results: IDocumentSearchResult[],
-    frameworkName: string
-  ): IFrameworkArchitectureData {
-    const overview = this.findDocSnippets(results, ['overview', 'slice-creation-rules']);
-    const whenToUse = this.findDocSnippets(results, ['when-to-use', 'overview']);
-    const checklist = this.findDocSnippets(results, ['checklist']);
-
-    return {
-      frameworkName,
-      documentation: {
-        overview: overview || '',
-        whenToUse: whenToUse || '',
-        checklist: checklist || '',
-      },
-    };
-  }
-
-  private findDocSnippets(results: IDocumentSearchResult[], keywords: string[]): string | null {
-    for (const keyword of keywords) {
-      const doc = results.find(
-        (r) =>
-          r.path.toLowerCase().includes(keyword.toLowerCase()) ||
-          r.name.toLowerCase().includes(keyword.toLowerCase())
-      );
-      if (doc) {
-        return doc.snippets.join('\n\n');
-      }
-    }
-    return null;
-  }
 }

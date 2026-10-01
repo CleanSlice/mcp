@@ -620,12 +620,17 @@ export * from './filterUser.dto';
 - [ ] NO direct Prisma access in controllers
 - [ ] NO TypeScript interfaces for DI tokens (use abstract classes)
 - [ ] NO manual data transformation in gateways (use mappers)
+- [ ] NO writing generated artifacts from `bootstrap()` - starting the API must
+      not modify a tracked file. `swagger-spec.json` is exported by
+      `npm run swagger:generate`, never by a boot
+      ([Swagger Setup](../01-setup/api-swagger.md#exporting-the-spec))
 
 ---
 
 ## Related Documentation
 
 - [TypeScript Standards](./ts-standards.md) - General TS rules
+- [Swagger Setup (API)](../01-setup/api-swagger.md) - The OpenAPI document and the exported spec
 - [Controller Pattern](../03-patterns/controller.md) - Detailed controller docs
 - [Gateway Pattern](../03-patterns/gateway.md) - Detailed gateway docs
 - [Repository Pattern](../03-patterns/repository.md) - Data access patterns

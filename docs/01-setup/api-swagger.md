@@ -1,8 +1,8 @@
 ---
 id: setup-api-swagger
 title: Swagger Setup (API)
-version: 1.0.0
-last_updated: 2025-12-19
+version: 1.1.0
+last_updated: 2026-08-20
 
 pattern: setup
 complexity: fundamental
@@ -24,6 +24,10 @@ keywords:
   - api documentation
   - swagger decorators
   - operationId
+  - swagger spec export
+  - swagger:generate
+  - stale openapi spec
+  - dirty working tree
 
 deprecated: false
 experimental: false
@@ -48,23 +52,29 @@ Swagger integrates with your NestJS API to provide **documentation and SDK gener
 │  @ApiTags, @ApiOperation({ operationId }), @ApiProperty      │
 └──────────────────────────────────────────────────────────────┘
                                │
-                               │  On app bootstrap
+                               │  buildOpenApiDocument(app)
                                ▼
 ┌──────────────────────────────────────────────────────────────┐
-│  SWAGGER MODULE                                               │
-│                                                               │
-│  1. Generates Swagger UI at /api                              │
-│  2. Exports swagger-spec.json for SDK generation              │
+│  ONE DOCUMENT BUILDER                                         │
+│  slices/setup/swagger/swagger.config.ts                       │
 └──────────────────────────────────────────────────────────────┘
-                               │
-              ┌────────────────┴────────────────┐
+              │                                 │
+              │  every boot                     │  only when you ask
               ▼                                 ▼
 ┌─────────────────────────┐      ┌─────────────────────────────┐
 │  Swagger UI (/api)      │      │  swagger-spec.json          │
-│  - Interactive docs     │      │  - Used by @hey-api/openapi │
-│  - Try endpoints        │      │  - Generates TypeScript SDK │
+│  served by main.ts      │      │  npm run swagger:generate   │
+│  - Interactive docs     │      │  - Committed to git         │
+│  - Try endpoints        │      │  - Input for the app SDK    │
 └─────────────────────────┘      └─────────────────────────────┘
 ```
+
+Two callers, one builder. A published spec that disagrees with the running API
+is worse than no spec, so neither caller is allowed its own `DocumentBuilder`.
+
+**`swagger-spec.json` is a committed build artifact, not a runtime output.**
+Starting the API serves the document; it never writes the file. See
+[Exporting the Spec](#exporting-the-spec).
 
 ---
 
@@ -99,11 +109,31 @@ export class UserDto {
 }
 ```
 
-### 3. Export swagger-spec.json on Bootstrap
+### 3. NEVER Write swagger-spec.json During Bootstrap
 
 ```typescript
-fs.writeFileSync('swagger-spec.json', JSON.stringify(document));
+// WRONG - starting the API modifies a file that is tracked in git
+async function bootstrap() {
+  const document = SwaggerModule.createDocument(app, config);
+  fs.writeFileSync('swagger-spec.json', JSON.stringify(document));
+  SwaggerModule.setup('api', app, document);
+}
+
+// CORRECT - bootstrap serves the document, a command writes the file
+async function bootstrap() {
+  SwaggerModule.setup('api', app, buildOpenApiDocument(app));
+}
 ```
+
+`swagger-spec.json` is committed, because the frontend generates its entire SDK
+from it and has to build without a running API. A write in `bootstrap()`
+therefore rewrites a **tracked file on every start**, into whatever directory
+the process happened to be launched from.
+
+The damage is not to the spec, it is to everyone else's `git status`: a file
+nobody edited turns up modified, and it gets either committed by accident or
+spends someone's afternoon being explained. Export it with
+[`npm run swagger:generate`](#exporting-the-spec) instead.
 
 ---
 
@@ -112,8 +142,13 @@ fs.writeFileSync('swagger-spec.json', JSON.stringify(document));
 ```
 api/
 ├── src/
-│   ├── main.ts
+│   ├── main.ts                     # serves the document at /api
+│   ├── swagger.ts                  # writes/checks the file (never runs on boot)
 │   └── slices/
+│       ├── setup/
+│       │   └── swagger/
+│       │       ├── swagger.config.ts   # the ONE DocumentBuilder
+│       │       └── index.ts
 │       ├── core/
 │       │   └── decorators/
 │       │       ├── ApiSingleResponse.ts
@@ -123,7 +158,7 @@ api/
 │           └── dtos/
 │               ├── user.dto.ts
 │               └── createUser.dto.ts
-└── swagger-spec.json
+└── swagger-spec.json               # committed artifact, written by command
 ```
 
 ---
@@ -140,12 +175,16 @@ npm install @nestjs/swagger swagger-ui-express
 
 ### `src/main.ts`
 
+`main.ts` does one Swagger thing: it serves the document. The builder lives in
+`slices/setup/swagger` ([below](#exporting-the-spec)), so the API and the
+exported file can never describe different contracts.
+
 ```typescript
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
-import * as fs from 'fs';
+import { buildOpenApiDocument } from './slices/setup/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -153,6 +192,42 @@ async function bootstrap() {
   app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
 
+  // Served, not written. The file comes from `npm run swagger:generate`.
+  SwaggerModule.setup('api', app, buildOpenApiDocument(app), {
+    swaggerOptions: { persistAuthorization: true },
+  });
+
+  await app.listen(process.env.PORT ?? 3333);
+}
+
+bootstrap();
+```
+
+---
+
+## Exporting the Spec
+
+The document is built in one place and used by two callers: `main.ts` serves it,
+and a dedicated entrypoint writes the file. Nothing else builds a document.
+
+### `src/slices/setup/swagger/swagger.config.ts`
+
+```typescript
+import { INestApplication } from '@nestjs/common';
+import { DocumentBuilder, OpenAPIObject, SwaggerModule } from '@nestjs/swagger';
+import { join } from 'node:path';
+
+/**
+ * The committed OpenAPI artifact, `api/swagger-spec.json`.
+ *
+ * Resolved from this file, NEVER from `process.cwd()`: the spec belongs to the
+ * api package, not to whichever directory a command was started from. Four
+ * levels up lands on `api/` from both `src/` and the compiled `dist/`, which
+ * are the same depth.
+ */
+export const SWAGGER_SPEC_PATH = join(__dirname, '..', '..', '..', '..', 'swagger-spec.json');
+
+export function buildOpenApiDocument(app: INestApplication): OpenAPIObject {
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
     .setDescription('REST API documentation')
@@ -162,119 +237,136 @@ async function bootstrap() {
       { type: 'http', in: 'header', scheme: 'bearer', bearerFormat: 'JWT' },
       'defaultBearerAuth',
     )
-    .addApiKey(
-      { type: 'apiKey', name: 'api-key', in: 'header', description: 'API Key Authorization' },
-      'api-key',
-    )
     .build();
 
-  const document = SwaggerModule.createDocument(app, config);
-
-  SwaggerModule.setup('api', app, document, {
-    swaggerOptions: { persistAuthorization: true },
-  });
-
-  fs.writeFileSync('swagger-spec.json', JSON.stringify(document));
-  await app.listen(process.env.PORT ?? 3333);
+  return SwaggerModule.createDocument(app, config);
 }
 
-bootstrap();
+/**
+ * The exact bytes of the artifact. Generation and the staleness check share it,
+ * so "up to date" means byte-identical and nothing softer.
+ */
+export function serializeOpenApiDocument(document: OpenAPIObject): string {
+  return JSON.stringify(document);
+}
 ```
 
----
-
-## Modular Configuration (Recommended)
-
-For better organization, extract Swagger config to a dedicated file:
-
-### `src/config/swagger.config.ts`
+`index.ts` next to it is the barrel both callers import from:
 
 ```typescript
-import { DocumentBuilder, SwaggerModule, OpenAPIObject } from '@nestjs/swagger';
-import { INestApplication } from '@nestjs/common';
-import * as fs from 'fs';
+export {
+  buildOpenApiDocument,
+  serializeOpenApiDocument,
+  SWAGGER_SPEC_PATH,
+} from './swagger.config';
+```
 
-export interface SwaggerConfig {
-  title: string;
-  description: string;
-  version: string;
-  path: string;
-  exportPath?: string;
-}
+### `src/swagger.ts` -- the explicit command
 
-const defaultConfig: SwaggerConfig = {
-  title: 'API Documentation',
-  description: 'REST API documentation',
-  version: '1.0',
-  path: 'api',
-  exportPath: 'swagger-spec.json',
-};
+```typescript
+import { NestFactory } from '@nestjs/core';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { relative } from 'node:path';
 
-export function setupSwagger(
-  app: INestApplication,
-  config: Partial<SwaggerConfig> = {},
-): OpenAPIObject {
-  const mergedConfig = { ...defaultConfig, ...config };
+import { AppModule } from './app.module';
+import {
+  buildOpenApiDocument,
+  serializeOpenApiDocument,
+  SWAGGER_SPEC_PATH,
+} from './slices/setup/swagger';
 
-  const documentBuilder = new DocumentBuilder()
-    .setTitle(mergedConfig.title)
-    .setDescription(mergedConfig.description)
-    .setVersion(mergedConfig.version)
-    .addServer('/')
-    .addBearerAuth(
-      { type: 'http', in: 'header', scheme: 'bearer', bearerFormat: 'JWT' },
-      'defaultBearerAuth',
-    )
-    .addApiKey(
-      { type: 'apiKey', name: 'api-key', in: 'header', description: 'API Key Authorization' },
-      'api-key',
-    )
-    .build();
+/**
+ *   npm run swagger:generate   write the spec
+ *   npm run swagger:check      fail if the committed spec is stale
+ *
+ * The app is created but never started: `NestFactory.create` alone is enough to
+ * explore the routes, and it skips `onModuleInit`, so no queue worker or
+ * scheduler comes up just to write a JSON file.
+ */
+async function main(): Promise<number> {
+  const check = process.argv.includes('--check');
+  const where = relative(process.cwd(), SWAGGER_SPEC_PATH) || SWAGGER_SPEC_PATH;
 
-  const document = SwaggerModule.createDocument(app, documentBuilder);
+  const app = await NestFactory.create(AppModule, { logger: false });
+  const spec = serializeOpenApiDocument(buildOpenApiDocument(app));
+  await app.close();
 
-  SwaggerModule.setup(mergedConfig.path, app, document, {
-    swaggerOptions: {
-      persistAuthorization: true,
-      docExpansion: 'none',
-      filter: true,
-      showRequestDuration: true,
-    },
-  });
-
-  if (mergedConfig.exportPath) {
-    fs.writeFileSync(mergedConfig.exportPath, JSON.stringify(document, null, 2));
+  if (!check) {
+    writeFileSync(SWAGGER_SPEC_PATH, spec);
+    console.log(`wrote ${where}`);
+    return 0;
   }
 
-  return document;
+  const committed = existsSync(SWAGGER_SPEC_PATH) ? readFileSync(SWAGGER_SPEC_PATH, 'utf8') : null;
+  if (committed === spec) {
+    console.log(`${where} is up to date`);
+    return 0;
+  }
+
+  console.error(
+    `${where} is stale. Run \`npm run swagger:generate\` and commit the result ` +
+      `(the frontend SDK is generated from this file).`,
+  );
+  return 1;
+}
+
+void main().then(
+  // A Nest app leaves live redis/db sockets behind; without an explicit exit the
+  // process would sit there with nothing left to do.
+  (code) => process.exit(code),
+  (error: unknown) => {
+    console.error(error);
+    process.exit(1);
+  },
+);
+```
+
+### `package.json`
+
+```json
+{
+  "scripts": {
+    "swagger:generate": "npm run build && node dist/swagger.js",
+    "swagger:check": "npm run build && node dist/swagger.js --check"
+  }
 }
 ```
 
-### Updated `src/main.ts`
+**Both build first, and that is not incidental.** The response schemas are
+attached by the `@nestjs/swagger` CLI plugin declared in `nest-cli.json`, which
+only runs during `nest build`. A document built by `ts-node` is missing most of
+its DTOs.
 
-```typescript
-import { NestFactory, Reflector } from '@nestjs/core';
-import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
-import { AppModule } from './app.module';
-import { setupSwagger } from './config/swagger.config';
+### The Staleness Gate
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.enableCors();
-  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
-  app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
+`swagger:check` builds the document, compares it **byte for byte** with the
+committed file and exits 1 if they differ. Two things follow from byte
+comparison, and both are intended:
 
-  setupSwagger(app, {
-    title: 'My API',
-    description: 'API for my application',
-    version: '1.0.0',
-  });
+- A change that reorders the document without changing the contract still fails
+  the check. That is correct: the committed bytes are what the SDK generator
+  reads, so "different bytes" is exactly the condition that needs a regenerate.
+- The check is deterministic. The same code produces the same bytes on every
+  run, so a passing check today keeps passing until someone changes a route or
+  a DTO.
 
-  await app.listen(process.env.PORT ?? 3333);
-}
+Keep it out of the lint/build gate: it boots the Nest app, so it needs the API's
+`.env`, which lint and build do not.
 
-bootstrap();
+### Changing a Route or a DTO
+
+The two artifacts are committed and neither refreshes itself:
+
+```bash
+cd api && npm run swagger:generate   # refresh the spec
+cd app && npm run build:api          # refresh the SDK from that spec
+git add api/swagger-spec.json app/slices/setup/api/data/repositories/api
 ```
+
+Skip the second command and you have moved the problem, not fixed it:
+`build:api` runs inside the app's `dev` and `build` scripts, so a stale
+committed SDK means starting the frontend leaves a modified tracked file behind
+-- the same dirty `git status`, one file over.
 
 ---
 
@@ -591,9 +683,11 @@ export class UpdateRoleDto {
 ### Initial Setup
 
 - [ ] Install `@nestjs/swagger` and `swagger-ui-express`
-- [ ] Configure `DocumentBuilder` in `main.ts`
-- [ ] Add `SwaggerModule.setup()` for UI
-- [ ] Export `swagger-spec.json` for frontend SDK
+- [ ] Put the `DocumentBuilder` in `slices/setup/swagger/swagger.config.ts`
+- [ ] Add `SwaggerModule.setup()` in `main.ts` for the UI
+- [ ] Add `src/swagger.ts` plus the `swagger:generate` / `swagger:check` scripts
+- [ ] Commit `swagger-spec.json`, and confirm that starting the API leaves
+      `git status --short` empty
 
 ### For Each Controller
 
@@ -619,6 +713,12 @@ export class UpdateRoleDto {
 - [ ] NO DTOs without `@ApiProperty` decorators
 - [ ] NO missing error response documentation
 - [ ] NO hardcoded examples that don't match schema
+- [ ] NO writing `swagger-spec.json` from `bootstrap()` -- starting the API must
+      never modify a tracked file
+- [ ] NO second `DocumentBuilder` -- the served document and the exported file
+      come from the same function
+- [ ] NO paths resolved from `process.cwd()` -- the artifact belongs to the
+      package, not to the directory the command was run from
 
 ---
 

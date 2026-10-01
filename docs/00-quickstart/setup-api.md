@@ -11,14 +11,17 @@ api/
 │   │   ├── setup/
 │   │   │   ├── prisma/
 │   │   │   ├── error/
+│   │   │   ├── swagger/
 │   │   │   └── health/
 │   │   ├── user/
 │   │   ├── team/
 │   │   └── file/
 │   ├── app.module.ts
+│   ├── swagger.ts
 │   └── main.ts
 ├── prisma/
 │   └── schema.prisma
+├── swagger-spec.json
 ├── docker-compose.yml
 ├── .env.example
 ├── .env.dev
@@ -91,10 +94,10 @@ The entry point configures Swagger, global interceptors, validation, and CORS.
 ```typescript
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import * as fs from 'fs';
+import { SwaggerModule } from '@nestjs/swagger';
 
 import { AppModule } from './app.module';
+import { buildOpenApiDocument } from './slices/setup/swagger';
 import { ErrorHandlingInterceptor } from './slices/setup/error/error-handling.interceptor';
 import { ResponseInterceptor } from './slices/setup/error/response.interceptor';
 
@@ -133,38 +136,10 @@ async function bootstrap() {
   // SWAGGER / OPENAPI
   // ============================================
 
-  const config = new DocumentBuilder()
-    .setTitle('CleanSlice API')
-    .setDescription('API documentation')
-    .setVersion('1.0')
-    .addBearerAuth(
-      {
-        description: 'JWT Bearer token',
-        name: 'Authorization',
-        bearerFormat: 'Bearer',
-        scheme: 'Bearer',
-        type: 'http',
-        in: 'Header',
-      },
-      'defaultBearerAuth',
-    )
-    .addApiKey(
-      {
-        type: 'apiKey',
-        name: 'x-api-key',
-        in: 'header',
-        description: 'API Key',
-      },
-      'api-key',
-    )
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-
-  // Export OpenAPI spec to file (for frontend SDK generation)
-  fs.writeFileSync('swagger-spec.json', JSON.stringify(document));
-
-  SwaggerModule.setup('api', app, document);
+  // Served, not written. `swagger-spec.json` is tracked in git and is produced
+  // by `npm run swagger:generate` - writing it here would modify a tracked file
+  // every time anyone starts the API.
+  SwaggerModule.setup('api', app, buildOpenApiDocument(app));
 
   // ============================================
   // START SERVER
@@ -190,7 +165,27 @@ The order of interceptors matters:
 
 ### Swagger Output
 
-The `swagger-spec.json` file is generated on startup. This file is used by the frontend to generate a type-safe API client using `@hey-api/openapi-ts`.
+`swagger-spec.json` is a **committed build artifact**, not a runtime output.
+Starting the API serves the document at `/api`; it never writes the file.
+
+```json
+{
+  "scripts": {
+    "swagger:generate": "npm run build && node dist/swagger.js",
+    "swagger:check": "npm run build && node dist/swagger.js --check"
+  }
+}
+```
+
+Change a controller, a DTO or a route and the spec is stale until you run
+`npm run swagger:generate` and commit the result - then `cd app && npm run
+build:api` to refresh the SDK, and commit that too.
+
+Why it is not written on boot: the file is tracked, so a write in `bootstrap()`
+leaves a modified file in the working tree of everyone who has ever started the
+API - noise in `git status` that gets committed by accident or explained by
+hand. Full pattern, including the staleness check, in
+[Swagger Setup (API)](../01-setup/api-swagger.md#exporting-the-spec).
 
 ## Prisma Slice
 

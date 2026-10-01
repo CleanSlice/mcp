@@ -450,7 +450,7 @@ incorrect values when total was not divisible by perPage.
 - **Code:** `{{ user.name }}`
 
 ### Code Flow
-1. `UserListProvider.vue` fetches users via `UsersService.getUsers()`
+1. `UserListProvider.vue` fetches users via `getUsers()`
 2. Passes `user` prop to `UserListThumb.vue`
 3. Thumb tries to display `user.name`
 

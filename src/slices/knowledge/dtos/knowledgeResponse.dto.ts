@@ -150,12 +150,15 @@ export class FrameworkArchitectureResponseDto extends BaseMcpResponseDto {
     content += this.data.documentation.overview;
     content += '\n\n---\n\n';
 
-    content += '## When to Use\n\n';
-    content += this.data.documentation.whenToUse;
-    content += '\n\n---\n\n';
-
-    content += '## Checklist\n\n';
-    content += this.data.documentation.checklist;
+    if (this.data.documentation.whenToUse.trim()) {
+      content += '## When to Use\n\n';
+      content += this.data.documentation.whenToUse;
+      content += '\n\n---\n\n';
+    }
+    if (this.data.documentation.checklist.trim()) {
+      content += '## Checklist\n\n';
+      content += this.data.documentation.checklist;
+    }
 
     return content;
   }

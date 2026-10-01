@@ -159,11 +159,11 @@ class DIContainer {
   }
 
   static isDevelopment(): boolean {
-    return process.env.NODE_ENV === 'development';
+    return import.meta.env.DEV;
   }
 
   static useMocks(): boolean {
-    return process.env.NUXT_PUBLIC_USE_MOCKS === 'true';
+    return import.meta.env.VITE_USE_MOCKS === 'true';
   }
 }
 
@@ -565,7 +565,7 @@ async function handleDelete(id: string) {
 export default defineNuxtConfig({
   runtimeConfig: {
     public: {
-      useMocks: process.env.NUXT_PUBLIC_USE_MOCKS || 'false',
+      useMocks: 'false',
     },
   },
   alias: {
@@ -576,14 +576,16 @@ export default defineNuxtConfig({
 });
 ```
 
+> **Note:** Use `import.meta.env.DEV` and `import.meta.env.VITE_USE_MOCKS` in plain TypeScript files (like `container.ts`). Use `useRuntimeConfig()` in Nuxt plugins and composables. Never pass `process.env` to Vite's `define` — it exposes all environment variables to the client bundle.
+
 ### Environment Files
 
 ```bash
 # .env.development
-NUXT_PUBLIC_USE_MOCKS=true
+VITE_USE_MOCKS=true
 
 # .env.production
-NUXT_PUBLIC_USE_MOCKS=false
+VITE_USE_MOCKS=false
 ```
 
 ---

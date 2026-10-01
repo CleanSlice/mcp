@@ -194,7 +194,7 @@ export default defineNuxtConfig({
 
 // slices/user/account/stores/account.ts
 import { defineStore } from 'pinia';
-import { AuthService, UserDto } from '#api/data';
+import { me, type UserDto } from '#api/data';
 
 export const useAccountStore = defineStore('account', {
   state: () => ({
@@ -215,7 +215,7 @@ export const useAccountStore = defineStore('account', {
     async fetchAccount() {
       try {
         this.loading = true;
-        const response = await AuthService.me();
+        const response = await me();
         if (response.data?.data) {
           this.user = response.data.data;
         }

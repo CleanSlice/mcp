@@ -300,3 +300,9 @@ docker run -p 8080:8080 cleanslice-mcp
 | `POST /mcp` | Streamable HTTP transport |
 | `GET /health` | Health check |
 | `GET /api` | Swagger docs |
+
+## Architecture documentation synchronization
+
+The four reliability guides in `docs/architecture/` are generated from the website repository's `docs/architecture/` files (sibling checkout `../docs/docs/architecture`). Run `node scripts/sync-architecture-docs.mjs` after editing the canonical docs and `node scripts/sync-architecture-docs.mjs --check` before release. For another checkout layout pass `--source=/absolute/path/to/architecture`. The check fails on missing or divergent copies. Commit the generated bundle with the MCP change so standalone deployments can search/read the same versioned content.
+
+`get-started` loads `00-quickstart/get-started.md` directly, with local-first/remote fallback. If unavailable it fails explicitly rather than returning empty rules. The bundled-knowledge integration tests exercise real loading, searching and rendered startup content. Updating files locally does not update the hosted MCP: build/test, publish the docs and deploy the MCP through the normal authorized release process.

@@ -221,44 +221,31 @@ describe('KnowledgeGateway', () => {
   });
 
   describe('getGettingStarted', () => {
-    it('should return rules document when found', async () => {
-      const result = await gateway.getGettingStarted();
-
-      expect(result.frameworkName).toBe('CleanSlice Architecture');
-      expect(result.documentation.overview).toContain('SINGULAR names');
+    afterEach(() => {
+      mockDocsLoader.loadDocument.mockReturnValue('# Rules\n\nSINGULAR names!');
+      mockGitHubLoader.loadDocument.mockResolvedValue(null);
     });
 
-    it('should search for rules in quickstart category', async () => {
-      await gateway.getGettingStarted();
-
-      expect(docsRepository.search).toHaveBeenCalledWith(
-        expect.objectContaining({
-          query: 'get-started',
-          category: 'quickstart',
-        })
-      );
-    });
-
-    it('should fallback to general quickstart search if rules not found', async () => {
-      // Mock no rules document
-      docsRepository.search.mockReturnValue([
-        {
-          name: 'Overview',
-          path: '00-quickstart/overview.md',
-          snippets: ['General overview'],
-          description: 'Overview',
-          category: 'quickstart',
-          tags: ['overview'],
-          relevanceScore: 15,
-          source: 'local',
-        },
-      ]);
+    it('loads the canonical document even when search has no rules result', async () => {
+      docsRepository.search.mockReturnValue([]);
       githubRepository.search.mockResolvedValue([]);
-
       const result = await gateway.getGettingStarted();
+      expect(mockDocsLoader.loadDocument).toHaveBeenCalledWith('00-quickstart/get-started.md');
+      expect(result.documentation.overview).toContain('SINGULAR names');
+      expect(result.documentation.overview).toContain('Source: 00-quickstart/get-started.md');
+      expect(docsRepository.search).not.toHaveBeenCalled();
+    });
 
-      // Should have called search twice (once for rules, once for fallback)
-      expect(docsRepository.search).toHaveBeenCalledTimes(2);
+    it('uses the remote canonical document when the local bundle is absent', async () => {
+      mockDocsLoader.loadDocument.mockReturnValue(null);
+      mockGitHubLoader.loadDocument.mockResolvedValue('# Remote rules\nUse singular names.');
+      expect((await gateway.getGettingStarted()).documentation.overview).toContain('Remote rules');
+    });
+
+    it('does not return a successful empty guide when both sources are absent', async () => {
+      mockDocsLoader.loadDocument.mockReturnValue(null);
+      mockGitHubLoader.loadDocument.mockResolvedValue(null);
+      await expect(gateway.getGettingStarted()).rejects.toThrow('documentation unavailable');
     });
   });
 

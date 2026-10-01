@@ -7,17 +7,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
 import { DocsLoader } from './docs.loader';
-import { config } from 'dotenv';
-import { join } from 'path';
+import { resolve } from 'path';
 
-// Load .env.dev file (Jest doesn't load it automatically)
-config({ path: join(__dirname, '../../../../../../.env.dev') });
 
 describe('DocsLoader Integration', () => {
   let loader: DocsLoader;
 
-  // Real path to docs folder (from .env.dev)
-  const DOCS_PATH = process.env.DOCS_PATH;
+  // Exercise the committed bundle without machine-specific env or secrets.
+  const DOCS_PATH = resolve(process.cwd(), 'docs');
   beforeAll(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [

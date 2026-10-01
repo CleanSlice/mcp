@@ -44,7 +44,7 @@ The error handling system has three main components:
 ┌──────────────────────────────────────────────────────────────┐
 │  API CALL                                                     │
 │                                                               │
-│  const result = await AuthService.login(data);                │
+│  const { data } = await login({ body: credentials });         │
 │                                                               │
 └──────────────────────────────────────────────────────────────┘
                                │
@@ -615,7 +615,7 @@ const { handleAsync } = useError();
 // Wraps async operation with automatic error handling
 const user = await handleAsync(
   'fetch-user',
-  () => UserService.getUser(id),
+  () => getUser({ path: { id } }),
   'Failed to fetch user'
 );
 
