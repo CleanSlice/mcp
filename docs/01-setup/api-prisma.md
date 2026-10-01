@@ -57,7 +57,7 @@ The `prisma-import` extension allows splitting Prisma schemas across slices:
 │  slices/file/file.prisma            ← File model             │
 └──────────────────────────────────────────────────────────────┘
                                │
-                               │  npm run generate
+                               │  bun run generate
                                │  (prisma-import --force)
                                ▼
 ┌──────────────────────────────────────────────────────────────┐
@@ -188,8 +188,8 @@ api/
 ### 1. Install Dependencies
 
 ```bash
-npm install @prisma/client
-npm install -D prisma
+bun add @prisma/client
+bun add -d prisma
 ```
 
 ### 2. Install VSCode Extension
@@ -201,11 +201,11 @@ Install **Prisma Import** (`ajmnz.prisma-import`) for syntax highlighting and In
 ```json
 {
   "scripts": {
-    "generate": "npx prisma-import --force",
-    "predev": "npm run docker && npm run migrate",
-    "premigrate": "npx prisma-import --force",
-    "migrate": "dotenv -e .env.dev -- npx prisma migrate dev && dotenv -e .env.dev -- npx prisma generate",
-    "start:prod": "npx prisma migrate deploy && node dist/main.js"
+    "generate": "bunx prisma-import --force",
+    "predev": "bun run docker && bun run migrate",
+    "premigrate": "bunx prisma-import --force",
+    "migrate": "dotenv -e .env.dev -- bunx prisma migrate dev && dotenv -e .env.dev -- bunx prisma generate",
+    "start:prod": "bunx prisma migrate deploy && node dist/main.js"
   },
   "prisma": {
     "import": {
@@ -270,7 +270,7 @@ The `DATABASE_URL` is configured via Terraform/environment variables in producti
 {
   "scripts": {
     "docker": "docker compose up -d",
-    "predev": "npm run docker && npm run migrate"
+    "predev": "bun run docker && bun run migrate"
   }
 }
 ```
@@ -504,21 +504,21 @@ And in Jest config (`package.json`):
 
 ---
 
-## NPM Scripts Reference
+## Scripts Reference
 
 | Script | Purpose |
 |--------|---------|
-| `npm run generate` | Merge prisma files (prisma-import) |
-| `npm run migrate` | Run migrations in dev mode |
-| `npm run predev` | Auto-runs before dev (docker + migrate) |
-| `npm run premigrate` | Auto-runs before migrate (prisma-import) |
+| `bun run generate` | Merge prisma files (prisma-import) |
+| `bun run migrate` | Run migrations in dev mode |
+| `bun run predev` | Auto-runs before dev (docker + migrate) |
+| `bun run premigrate` | Auto-runs before migrate (prisma-import) |
 
 ### Workflow
 
 ```bash
-npm run dev        # starts docker and runs migrations
-npm run migrate    # manual migration creation
-npm run generate   # generate merged schema only
+bun run dev        # starts docker and runs migrations
+bun run migrate    # manual migration creation
+bun run generate   # generate merged schema only
 ```
 
 ---
@@ -554,7 +554,7 @@ import { Team } from "../user/team"
 - [ ] Create `docker-compose.yml` with `postgres-local` service
 - [ ] Create `docker/postgresql/` directory for volume
 - [ ] Add `prisma` config to `package.json`
-- [ ] Add npm scripts (`docker`, `generate`, `migrate`, etc.)
+- [ ] Add package scripts (`docker`, `generate`, `migrate`, etc.)
 - [ ] Create `slices/prisma/` with service and module
 - [ ] Configure `#prisma` path alias
 - [ ] Create `.env.dev` with local DATABASE_URL
@@ -563,8 +563,8 @@ import { Team } from "../user/team"
 
 - [ ] Create `{model}.prisma` file **at the slice root**
 - [ ] Add `import` statements for related models
-- [ ] Run `npm run generate` to merge schemas
-- [ ] Run `npm run migrate` to create migration
+- [ ] Run `bun run generate` to merge schemas
+- [ ] Run `bun run migrate` to create migration
 - [ ] Verify generated `prisma/schema.prisma`
 
 ### Using in Gateways

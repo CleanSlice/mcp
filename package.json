@@ -7,10 +7,10 @@
   "license": "MIT",
   "scripts": {
     "build": "nest build",
-    "swagger:generate": "npm run build && node dist/swagger.js",
-    "swagger:check": "npm run build && node dist/swagger.js --check",
+    "swagger:generate": "bun run build && node dist/swagger.js",
+    "swagger:check": "bun run build && node dist/swagger.js --check",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
-    "dev": "export PORT=${PORT:-4225}; npm run start:dev",
+    "dev": "export PORT=${PORT:-4225}; bun run start:dev",
     "start": "nest start",
     "start:dev": "export PORT=${PORT:-4225}; cross-env NODE_ENV=dev nest start --watch",
     "docker": "docker build -t cleanslice-mcp-server .",

@@ -196,7 +196,7 @@ export default defineNuxtConfig({
 **Reference:** [GitHub - setup/pinia](https://github.com/Dreamvention/cleanslice/tree/main/app/slices/setup/pinia)
 
 ```bash
-npm i @pinia/nuxt pinia
+bun add @pinia/nuxt pinia
 ```
 
 ```typescript
@@ -217,8 +217,8 @@ Stores in `{slice}/stores/` are auto-imported and available globally.
 **Reference:** [GitHub - setup/di](https://github.com/Dreamvention/cleanslice/tree/main/app/slices/setup/di)
 
 ```bash
-npm i inversify reflect-metadata tslib
-npm i -D @rollup/plugin-typescript
+bun add inversify reflect-metadata tslib
+bun add -d @rollup/plugin-typescript
 ```
 
 ```typescript
@@ -258,7 +258,7 @@ export default defineNuxtConfig({
 **Reference:** [GitHub - setup/i18n](https://github.com/Dreamvention/cleanslice/tree/main/app/slices/setup/i18n)
 
 ```bash
-npm i -D @nuxtjs/i18n@next
+bun add -d @nuxtjs/i18n@next
 ```
 
 ```typescript
@@ -318,8 +318,8 @@ export default defineNuxtConfig({
 **Reference:** [setup/api](https://github.com/Dreamvention/cleanslice/tree/main/app/slices/setup/api) | [openapi-ts.config.ts](https://github.com/Dreamvention/cleanslice/blob/main/app/openapi-ts.config.ts)
 
 ```bash
-npm i axios
-npm i -D @hey-api/openapi-ts
+bun add axios
+bun add -d @hey-api/openapi-ts
 ```
 
 > **Note:** Starting with `@hey-api/openapi-ts` v0.73+, `@hey-api/client-axios` is bundled and does not need separate installation.
@@ -349,18 +349,18 @@ export default defineConfig({
 {
   "scripts": {
     "build:api": "openapi-ts",
-    "dev": "npm run build:api && nuxt dev",
+    "dev": "bun run build:api && nuxt dev",
     "build": "nuxt build"
   }
 }
 ```
 
 ```bash
-npm run build:api
+bun run build:api
 ```
 
 > **Both artifacts are committed, and neither refreshes itself.**
-> `../api/swagger-spec.json` is written by `npm run swagger:generate` in the API
+> `../api/swagger-spec.json` is written by `bun run swagger:generate` in the API
 > ([Swagger Setup](../01-setup/api-swagger.md#exporting-the-spec)), and the SDK
 > under `slices/setup/api/data/repositories/api/` is written by `build:api`.
 > Regenerate the spec, regenerate the SDK, commit both. Skip the second step and
@@ -499,8 +499,8 @@ export const handleError = async (error: any) => {
 **Reference:** [GitHub - setup/theme](https://github.com/Dreamvention/cleanslice/tree/main/app/slices/setup/theme)
 
 ```bash
-npm i @nuxtjs/tailwindcss shadcn-nuxt
-npm i -D vite-svg-loader
+bun add @nuxtjs/tailwindcss shadcn-nuxt
+bun add -d vite-svg-loader
 ```
 
 ```typescript
@@ -622,14 +622,16 @@ export default defineNuxtConfig({
 
 ```dockerfile
 FROM node:22-alpine AS builder
+COPY --from=oven/bun:1-alpine /usr/local/bin/bun /usr/local/bin/bun
+RUN ln -s /usr/local/bin/bun /usr/local/bin/bunx
 WORKDIR /usr/src/app
-COPY package*.json ./
-RUN npm install
+COPY package.json bun.lock ./
+RUN bun install --frozen-lockfile
 COPY . .
 ARG NUXT_PUBLIC_API_URL
-RUN NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL} npm run build
+RUN NUXT_PUBLIC_API_URL=${NUXT_PUBLIC_API_URL} bun run build
 EXPOSE 3000
-CMD ["npm", "run", "start"]
+CMD ["bun", "run", "start"]
 ```
 
 ```bash

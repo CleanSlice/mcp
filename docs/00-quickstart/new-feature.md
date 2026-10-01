@@ -469,7 +469,7 @@ After approval, I will detail the file structure.
 - [ ] Translations display correctly
 
 ### Next Steps
-1. Run `npm run build` to verify no errors
+1. Run `bun run build` to verify no errors
 2. Test the feature manually
 3. Add any additional functionality as needed
 

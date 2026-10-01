@@ -622,7 +622,7 @@ export * from './filterUser.dto';
 - [ ] NO manual data transformation in gateways (use mappers)
 - [ ] NO writing generated artifacts from `bootstrap()` - starting the API must
       not modify a tracked file. `swagger-spec.json` is exported by
-      `npm run swagger:generate`, never by a boot
+      `bun run swagger:generate`, never by a boot
       ([Swagger Setup](../01-setup/api-swagger.md#exporting-the-spec))
 
 ---

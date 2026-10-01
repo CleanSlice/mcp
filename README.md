@@ -243,8 +243,8 @@ Do NOT guess conventions — always verify against MCP results first.
 ```bash
 git clone https://github.com/CleanSlice/mcp.git
 cd mcp
-npm install
-npm run dev
+bun install
+bun run dev
 ```
 
 Then point your MCP client to `http://localhost:8080/mcp`.
