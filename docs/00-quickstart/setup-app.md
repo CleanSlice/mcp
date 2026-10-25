@@ -157,7 +157,7 @@ import { registerSlices } from './registerSlices';
 export default defineNuxtConfig({
   devtools: { enabled: false },
   extends: [...registerSlices()],
-  ssr: false,
+  ssr: false, // SPA by default; every pattern in these docs stays valid with ssr: true
   runtimeConfig: {
     public: {
       apiUrl: 'http://localhost:3333',
@@ -187,7 +187,7 @@ export default defineNuxtConfig({
 | **i18n** | Internationalization | - | `nuxt.config.ts`, `i18n.config.ts` |
 | **api** | Backend API SDK (hey-api) | `#api` | `plugins/api.ts`, `data/repositories/api/` |
 | **error** | Global error handling | `#error` | `utils/handleError.ts`, `stores/error.ts` |
-| **theme** | UI components (shadcn-vue) | `#theme` | `components/ui/`, `tailwind.config.ts` |
+| **theme** | UI components (shadcn-vue, Tailwind v4) | `#theme` | `components/ui/`, `assets/css/tailwind.css`, `assets/themes/` |
 
 ---
 
@@ -499,46 +499,52 @@ export const handleError = async (error: any) => {
 **Reference:** [GitHub - setup/theme](https://github.com/Dreamvention/cleanslice/tree/main/app/slices/setup/theme)
 
 ```bash
-bun add @nuxtjs/tailwindcss shadcn-nuxt
-bun add -d vite-svg-loader
+bun add -d tailwindcss @tailwindcss/vite tw-animate-css shadcn-nuxt @nuxtjs/color-mode
+bun add reka-ui class-variance-authority clsx tailwind-merge lucide-vue-next
 ```
 
 ```typescript
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import svgLoader from 'vite-svg-loader';
+import { dirname, resolve } from 'path';
+import { readFileSync } from 'fs';
+import tailwindcss from '@tailwindcss/vite';
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
+const appRoot = resolve(currentDir, '../../..');
+const componentsJson = JSON.parse(readFileSync(resolve(appRoot, 'components.json'), 'utf-8'));
+const themeName = componentsJson.tailwind?.theme || 'default';
 
 export default defineNuxtConfig({
-  modules: ['@nuxtjs/tailwindcss', 'shadcn-nuxt'],
-  css: ['#theme/assets/scss/main.scss'],
+  modules: ['shadcn-nuxt'],
+  css: [`#theme/assets/themes/${themeName}.css`, '#theme/assets/css/tailwind.css'],
   alias: {
     '#theme': currentDir,
   },
-  tailwindcss: {
-    cssPath: '#theme/assets/css/tailwind.css',
-    configPath: './tailwind.config',
-  },
   vite: {
-    plugins: [svgLoader()],
+    plugins: [tailwindcss()],
   },
   shadcn: {
     prefix: '',
     componentDir: './slices/setup/theme/components/ui',
   },
+  components: {
+    dirs: [],
+  },
 });
 ```
+
+Tailwind v4 has no `tailwind.config`; tokens are wired in `tailwind.css` with `@theme inline`, values live in `assets/themes/*.css`, and `components.json` at the app root names the active theme. Full setup: [Theme Setup](../01-setup/app-theme.md).
 
 **Structure:**
 
 ```
 slices/setup/theme/
 ├── nuxt.config.ts
-├── tailwind.config.ts
 ├── assets/
-│   ├── css/tailwind.css
-│   └── scss/main.scss
+│   ├── css/tailwind.css          # @import tailwindcss + @theme inline
+│   └── themes/
+│       ├── default.css           # :root + .dark variables (oklch)
+│       └── cleanslice.css
 ├── components/ui/
 ├── utils/
 │   └── cn.ts

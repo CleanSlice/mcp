@@ -375,6 +375,16 @@ await authStore.login(credentials);
 
 ---
 
+### SSR-Safe State
+
+The starter kit runs as an SPA (`ssr: false`); write state so that turning SSR on changes nothing:
+
+- App-wide state → Pinia (serialized into the payload, hydrated on the client)
+- Per-instance data that must survive hydration (a detail screen keyed by id) → `useState('user:' + id)`; a plain `ref` created on the server is recreated empty on the client and the request runs twice. `useState` is for this case only, never a replacement for a store
+- NO module-level caches or in-flight maps: module scope is shared across concurrent server renders, so one request can read another tenant's data. Keep caches on `useNuxtApp()` or in a store
+
+---
+
 ## 7. Composable Standards
 
 ```typescript

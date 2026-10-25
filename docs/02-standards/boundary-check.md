@@ -142,20 +142,21 @@ error no-circular: user.gateway.ts -> user.types.ts -> user.service.ts -> user.g
 
 ### 3. Layers inside a slice
 
-Presentation calls a **service**; the domain layer depends on the gateway **interface** it declares. Neither reaches into `data/`. Three sub-checks, because one alone is not enough:
+Presentation calls the slice's **service**, or its **abstract gateway** when the slice has no business logic; the domain layer depends on the gateway **interface** it declares. Neither reaches into `data/`. Two sub-checks:
 
 | Sub-check | Sees | Catches |
 |-----------|------|---------|
 | `no-data-layer-in-controller` | paths | `import { UserGateway } from './data/user.gateway'` |
 | `no-data-layer-in-domain` | paths | a service importing a mapper or a concrete gateway |
-| `no-gateway-name-in-controller` | **names** | `import { IUserGateway } from './domain'` — through the barrel |
 
-The name sub-check exists because of how the agentfy2 drift actually looked: every one of those six controllers pulled its gateway through the slice's `domain/index.ts`. At module level that import is indistinguishable from importing the service standing next to it — same file, same edge. What gives it away is the *name*, so that sub-check reads the import statements themselves.
+Both are path rules: `data/` is a folder, so a concrete gateway or mapper imported from presentation or domain is an edge the module graph can see.
 
 ```
-error no-gateway-name-in-controller: src/slices/user/user/user.controller.ts -> ./domain (IUserGateway)
-  A controller may not import a gateway — call the owning slice's service instead
+error no-data-layer-in-controller: src/slices/user/user/user.controller.ts -> ./data/user.gateway.ts
+  A controller may not import from data/ — inject the service or the abstract gateway from domain/
 ```
+
+Importing the abstract `IUserGateway` through the domain barrel is allowed; it is the DI token, not the implementation. An earlier revision of this standard carried a third, name-based sub-check (`no-gateway-name-in-controller`) that refused the abstract gateway in controllers outright. It was dropped when the controller rule settled on "service, or abstract gateway for pass-through CRUD" (see [Controller Pattern](../03-patterns/controller.md)). What no path check can see is a business rule written inline in a controller that holds a gateway; that remains a review question.
 
 See [Clean Architecture Layers](../03-patterns/layers.md), [Service Pattern](../03-patterns/service.md), [Controller Pattern](../03-patterns/controller.md).
 

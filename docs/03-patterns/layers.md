@@ -457,7 +457,7 @@ export class MockUserGateway implements IUserGateway {
 ### Rules
 
 - Implements interfaces from `domain/`
-- Can import from `domain/` layer and other slice's `data/` layers
+- Can import from `domain/` layer; from another slice's `data/` only its **mapper** (mapper composition), never its concrete gateway
 - Handles all external communication
 - NO business logic (only data transformation)
 - Domain types should not leak database types
@@ -513,8 +513,11 @@ import { IUserData } from '../../user/domain';
 // GOOD: data -> domain (cross-slice)
 import { IUserData } from '../../user/domain';
 
-// GOOD: data -> data (cross-slice)
-import { UserRepository } from '../../user/data';
+// GOOD: data -> data (cross-slice), mapper composition only
+import { UserMapper } from '#user/data';
+
+// BAD: data -> another slice's concrete gateway
+import { UserGateway } from '#user/data'; // depend on its domain contract instead
 
 // BAD: domain -> data
 import { UserRepository } from '../data'; // NEVER DO THIS

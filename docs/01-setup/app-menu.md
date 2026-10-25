@@ -2,6 +2,8 @@
 
 This guide explains how to set up a dynamic menu system in Nuxt using the CleanSlice architecture. The menu is managed through a central Pinia store, and each slice can register its own menu items via plugins.
 
+> **Note:** The starter kit ships without a menu system. This is the recommended shape when a project adds one; `common/` owns the store and the rendering components.
+
 ## Architecture Overview
 
 The menu system consists of three main parts:

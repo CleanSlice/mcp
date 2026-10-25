@@ -55,7 +55,8 @@ Controllers are the **presentation layer** of your slice:
 │  - Swagger documentation                                      │
 │  - Input validation (via DTOs)                                │
 │  - Response formatting (via setup/response interceptor)       │
-│  - Calls SERVICE only (never gateway)                         │
+│  - Calls the SERVICE, or the abstract GATEWAY when the slice  │
+│    has no business logic; never the concrete data/ gateway   │
 └──────────────────────────────┬───────────────────────────────┘
                                │
                                v
@@ -70,10 +71,12 @@ Controllers are the **presentation layer** of your slice:
 
 ## Critical Rules
 
-### 1. Controllers ONLY Call Services
+### 1. Controllers Call the Service, or the Abstract Gateway for Pass-Through CRUD
+
+A controller delegates. When the slice has a service (any business rule, validation beyond DTO shape, orchestration), the controller injects the service. When the slice is plain CRUD with no business logic, the controller may inject the **abstract** gateway (`IUserGateway`, the DI token declared in `domain/`) directly. In both cases the controller never imports from `data/`.
 
 ```typescript
-// CORRECT - Controller calls service
+// CORRECT - Controller calls service (slice has business logic)
 @Controller('users')
 export class UserController {
   constructor(private readonly userService: UserService) {}
@@ -84,17 +87,30 @@ export class UserController {
   }
 }
 
-// WRONG - Controller calls gateway directly
+// CORRECT - Controller calls the abstract gateway (pass-through CRUD, no service)
 @Controller('users')
 export class UserController {
-  constructor(private readonly userGateway: IUserGateway) {}  // NEVER
+  constructor(private readonly userGateway: IUserGateway) {}  // abstract token from domain/
 
   @Get(':id')
   async getUser(@Param('id') id: string) {
-    return this.userGateway.findById(id);  // NEVER do this
+    return this.userGateway.getUser(id);
   }
 }
+
+// WRONG - Controller imports the concrete gateway from data/
+import { UserGateway } from './data/user.gateway';  // NEVER
+
+// WRONG - Business logic in the controller
+@Get(':id')
+async getUser(@Param('id') id: string) {
+  const user = await this.userGateway.getUser(id);
+  if (user.banned) throw new UserBannedError(id);  // belongs in a service
+  return user;
+}
 ```
+
+The moment a controller needs a decision like the one above, add the service and move the controller to it. The starter kit's `user` slice injects `UserService`; the project boundary check forbids any `data/` import from a controller.
 
 ### 2. Every Endpoint MUST Have `operationId`
 
@@ -144,9 +160,10 @@ slices/user/
 ├── user.controller.ts         # At ROOT of slice (not in presentation/)
 ├── user.module.ts
 ├── domain/
-│   └── user.service.ts        # Controller calls this
+│   ├── user.service.ts        # Controller calls this when the slice has logic
+│   └── user.gateway.ts        # ...or this abstract contract for pass-through CRUD
 ├── data/
-│   └── user.gateway.ts        # Controller NEVER calls this
+│   └── user.gateway.ts        # Controller NEVER imports this (concrete)
 └── dtos/
     ├── createUser.dto.ts
     └── userResponse.dto.ts
@@ -681,7 +698,7 @@ export class UserModule {}
 - [ ] Metadata tags at top of file
 - [ ] `@ApiTags()` decorator on class
 - [ ] `@Controller()` with PLURAL route
-- [ ] Constructor injects SERVICE only (never gateway)
+- [ ] Constructor injects the service, or the abstract gateway (`IUserGateway`) when the slice has no service; never the concrete `data/` gateway
 
 ### Every Endpoint Must Have
 
@@ -696,7 +713,7 @@ export class UserModule {}
 
 - [ ] NO business logic in controller
 - [ ] NO validation logic (use DTOs)
-- [ ] NO direct gateway calls
+- [ ] NO imports from `data/` (concrete gateway, mapper)
 - [ ] NO try/catch (use ErrorHandlingInterceptor)
 - [ ] NO manual response wrapping (use ResponseInterceptor)
 

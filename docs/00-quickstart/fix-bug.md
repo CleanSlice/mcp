@@ -31,7 +31,7 @@ production_ready: true
 
 # Bug Fix Workflow
 
-> **CRITICAL: Create PLAN.md file BEFORE writing ANY code.** Even for bug fixes, document the investigation and proposed fix, then get user approval. No exceptions.
+> **CRITICAL: Create PLAN.md file BEFORE writing ANY code.** Even for bug fixes, document the investigation and the proposed fix. Existing user authorization or an approved task satisfies the approval; do not request it again. Ask only when the fix would change the authorized scope (see [Workflow](./phases.md)).
 
 ---
 
@@ -84,9 +84,10 @@ production_ready: true
 ║   1. RUN the MCP commands above (Step 0)                        ║
 ║   2. Investigate and document findings                          ║
 ║   3. Create PLAN.md with proposed fix                           ║
-║   4. Present to user: "Do you approve this fix?"                ║
-║   5. WAIT for explicit approval                                 ║
-║   6. Only then apply the fix                                    ║
+║   4. Record the proposal in PLAN.md (the reviewable result)     ║
+║   5. Existing authorization covers it; ask only if the fix      ║
+║      changes the authorized scope                               ║
+║   6. Then apply the fix                                         ║
 ║                                                                 ║
 ║   Even "simple" fixes can have side effects!                    ║
 ║                                                                 ║
@@ -115,7 +116,7 @@ production_ready: true
 ┌─────────────────────────────────────────────────────────────────┐
 │  3. PLAN FIX                                                     │
 │  ─────────────────────────────────────────────────────────────  │
-│  Propose solution, get user approval                             │
+│  Propose solution; ask only on a scope change                    │
 └─────────────────────────────────────────────────────────────────┘
                                │
                                ▼
@@ -225,7 +226,7 @@ To fix this bug, I need to understand:
 
 ## Phase 3: Plan Fix
 
-**Propose the solution and get user approval.**
+**Propose the solution.** An approved task or an explicit instruction to fix already authorizes the fix within its scope. Ask for a decision only when the root cause means the fix changes that scope (a different slice, a schema change, a behaviour the user did not ask to change).
 
 ### Fix Proposal Template
 
@@ -265,10 +266,10 @@ const result = data?.value ?? defaultValue;
 
 ---
 
-**Do you approve this fix?**
+**Scope check:** within the authorized task / changes scope because ...
 ```
 
-**Wait for approval before implementing.**
+If the scope check says "within", continue to Phase 4 without waiting. If it says "changes scope", stop and ask.
 
 ---
 
@@ -501,7 +502,7 @@ Update frontend component to use `fullName` instead of `name`.
 
 ---
 
-**Do you approve this fix?**
+**Scope check:** within the authorized task
 ```
 
 ### Phase 4: Implement
@@ -537,11 +538,11 @@ was referencing 'user.name' but the API returns 'user.fullName'.
 |-------|--------|--------|
 | 1. Reproduce | Understand bug | Bug report |
 | 2. Investigate | Find root cause | Investigation report |
-| 3. Plan Fix | Propose solution | Fix proposal + approval |
+| 3. Plan Fix | Propose solution | Fix proposal + scope check |
 | 4. Implement | Apply fix | Code changes |
 | 5. Verify & Commit | Test + commit | Commit message |
 
-**Never skip Phase 3 (Plan Fix).** Always get user approval before changing code.
+**Never skip Phase 3 (Plan Fix).** The written proposal is what makes the change reviewable; approval is already given by the authorized task unless the fix changes its scope.
 
 ---
 
