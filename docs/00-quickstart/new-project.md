@@ -53,6 +53,7 @@ production_ready: true
 ║   search(query: "slice structure")                              ║
 ║   search(query: "nestjs standards")                             ║
 ║   search(query: "nuxt standards")                               ║
+║   search(query: "identifier standards")                         ║
 ║   search(query: "new project setup")                            ║
 ║                                                                 ║
 ║   READ THE RETURNED DOCS. They tell you:                        ║
@@ -60,6 +61,7 @@ production_ready: true
 ║   - domain/, data/, dtos/ folder structure                      ║
 ║   - Provider.vue component pattern                              ║
 ║   - Prisma IS the repository (no UserRepository)                ║
+║   - Primary IDs: formatId(prefix) in the gateway, no uuid/cuid  ║
 ║                                                                 ║
 ║   🚫 If you skip this, your plan WILL be wrong.                 ║
 ║                                                                 ║
@@ -73,6 +75,7 @@ production_ready: true
 - [ ] **Gateway pattern** - abstract in `domain/`, concrete in `data/`
 - [ ] **Slice structure** - `domain/`, `data/`, `dtos/` folders required
 - [ ] **Prisma IS the repository** - no UserRepository, ChatRepository
+- [ ] **Primary IDs** - `id String @id`, gateway mints with `formatId(prefix)` in `withIdRetry`; never `@default(uuid())`/`cuid()`
 - [ ] **Provider.vue pattern** - every component folder needs it
 - [ ] **File naming** - `{entity}.gateway.ts`, `{entity}.mapper.ts`
 
@@ -173,12 +176,13 @@ production_ready: true
 ║   WRONG PATTERNS (CRITICAL):                                    ║
 ║   DB access: chat.gateway.ts; adapters may use repository.ts           ║
 ║   ❌ "UserRepository"  → Prisma IS the repository, use Gateway  ║
+║   ❌ "@default(uuid())" → id String @id; formatId() in gateway  ║
 ║   ❌ "ChatRepository"  → Use ChatGateway instead                ║
 ║   Extra DB repository → Gateway; adapters may be repositories    ║
 ║   ❌ "useChat.ts"      → Must be "stores/chat.ts" (Pinia)       ║
 ║   ❌ "composables/useXxx" → Must be "stores/xxx.ts"             ║
 ║   ❌ "Service interface" → Use abstract class instead           ║
-║   ❌ "useState"        → Use ref() or Pinia instead             ║
+║   ❌ "useState" as app state → Pinia; keyed useState = SSR data ║
 ║                                                                 ║
 ║   WRONG FOLDER/FILE NAMES:                                      ║
 ║   ❌ "features/"       → Use "slices/" instead                  ║

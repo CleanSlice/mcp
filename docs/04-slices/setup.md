@@ -47,7 +47,7 @@ production_ready: true
 ┌─────────────────────────────────────────────────────────────────┐
 │  API SETUP SLICES (NestJS)                                      │
 │  ─────────────────────────────────────────────────────────────  │
-│  prisma/  │  core/  │  aws/  │  redis/  │  health/              │
+│  prisma/ │ core/ │ aws/ │ redis/ │ health/ │ id/ │ mail/        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -93,10 +93,9 @@ export default defineNuxtConfig({
 ```
 app/slices/setup/theme/
 ├── nuxt.config.ts
-├── tailwind.config.js
-├── assets/scss/main.scss
+├── assets/css/tailwind.css # @import tailwindcss + @theme inline token wiring
+├── assets/themes/*.css     # one theme = one file of CSS variables (:root + .dark)
 ├── components/ui/          # Shadcn Vue: button/, card/, dialog/, form/, input/ ...
-├── plugins/fonts.ts
 └── utils/cn.ts
 ```
 
@@ -104,27 +103,33 @@ app/slices/setup/theme/
 
 ```typescript
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+import { dirname, resolve } from 'path';
+import { readFileSync } from 'fs';
+import tailwindcss from '@tailwindcss/vite';
+
 const currentDir = dirname(fileURLToPath(import.meta.url));
+const appRoot = resolve(currentDir, '../../..');
+const componentsJson = JSON.parse(readFileSync(resolve(appRoot, 'components.json'), 'utf-8'));
+const themeName = componentsJson.tailwind?.theme || 'default';
 
 export default defineNuxtConfig({
   alias: { '#theme': currentDir },
-  modules: ['@nuxtjs/tailwindcss', 'shadcn-nuxt'],
-  tailwindcss: {
-    cssPath: `${currentDir}/assets/scss/main.scss`,
-    configPath: `${currentDir}/tailwind.config.js`,
-  },
+  modules: ['shadcn-nuxt'],
+  css: [`#theme/assets/themes/${themeName}.css`, '#theme/assets/css/tailwind.css'],
+  vite: { plugins: [tailwindcss()] },
   shadcn: {
     prefix: '',
     componentDir: `${currentDir}/components/ui`,
   },
-  vite: { plugins: [svgLoader()] },
+  components: { dirs: [] },
 });
 ```
 
+Tailwind v4: no `tailwind.config`, no `@nuxtjs/tailwindcss`. `components.json` at the app root names the active theme. Full setup: [Theme Setup](../01-setup/app-theme.md).
+
 #### Key Dependencies
 
-`@nuxtjs/tailwindcss`, `shadcn-nuxt`, `tailwindcss`, `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-vue-next`, `vee-validate`, `zod`, `@vee-validate/zod`
+`tailwindcss`, `@tailwindcss/vite`, `tw-animate-css`, `shadcn-nuxt`, `reka-ui`, `class-variance-authority`, `clsx`, `tailwind-merge`, `lucide-vue-next`, `@nuxtjs/color-mode`
 
 ---
 
@@ -364,6 +369,8 @@ Located at: `api/src/slices/`
 | `aws/` | AWS services (S3, Cognito, etc.) | @aws-sdk/* |
 | `redis/` | Cache and session storage | redis |
 | `health/` | Health check endpoint | - |
+| `id/` | Primary IDs: `formatId`, `withIdRetry`, `@IsEntityId`, `EntityIdPipe`, `IIdGateway.reserve` | human-id 4.1.3, nanoid 3.3.11 |
+| `mail/` | Email sending behind `IMailGateway`; SMTP repository, Mailpit locally | nodemailer |
 
 `swagger/` holds pure functions, not providers, so it has no module and nothing
 imports it in `app.module.ts` - `main.ts` and `src/swagger.ts` import it
@@ -377,7 +384,7 @@ directly. It exists so that the document served at `/api` and the committed
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
-    PrismaModule, CoreModule, AwsModule, RedisModule, HealthModule,
+    PrismaModule, CoreModule, AwsModule, RedisModule, HealthModule, IdModule, MailModule,
     UserModule, ProjectModule,
   ],
 })
@@ -649,6 +656,83 @@ export class HealthController {
 
 ---
 
+### 6. ID Slice
+
+**Purpose:** The one place that builds and checks primary keys. Every id is `<prefix>-<adjective>-<noun>-<12 Crockford>`, minted by the gateway, never by a Prisma `@default`.
+
+#### Structure
+
+```
+api/src/slices/setup/id/
+├── id.module.ts                    # @Global; IIdGateway -> IdGateway
+├── id.prisma                       # model IdReservation { id String @id }
+├── id.validator.ts                 # entityId(), @IsEntityId(), EntityIdPipe
+├── domain/
+│   ├── idFormat.ts                 # formatId, isId, isCanonicalId, LEGACY_ID_FORMATS, idPattern
+│   └── id.gateway.ts               # abstract IIdGateway { reserve(prefix) }
+└── data/
+    ├── id.gateway.ts               # reserve() through IdReservation
+    └── idRetry.ts                  # withIdRetry (Prisma P2002 on ['id'], 5 attempts)
+```
+
+#### Usage
+
+```typescript
+const user = await withIdRetry(() =>
+  this.prisma.user.create({ data: { id: formatId(USER_ID_PREFIX), ...createData } }),
+);
+
+@Param('id', new EntityIdPipe(USER_ID_PREFIX)) id: string
+```
+
+Rules: [Identifier Standards](../02-standards/id-standards.md). Installation: [ID Setup (API)](../01-setup/api-id.md).
+
+---
+
+### 7. Mail Slice
+
+**Purpose:** The one place the API sends email from. Feature slices inject `MailService`; the transport is a repository behind an abstract gateway. Locally the repository talks to Mailpit (Docker), in production to any SMTP relay.
+
+#### Structure
+
+```
+api/src/slices/setup/mail/
+├── mail.module.ts                  # @Global; IMailGateway -> SmtpMailGateway
+├── index.ts
+├── domain/
+│   ├── mail.types.ts               # IMailMessage, IMailResult
+│   ├── mail.gateway.ts             # abstract IMailGateway
+│   ├── mail.service.ts             # MailService: default sender, delegates
+│   └── mail.errors.ts              # MailNotConfiguredError, MailDeliveryError
+└── data/
+    ├── mail.gateway.ts             # SmtpMailGateway
+    ├── mail.mapper.ts
+    └── repositories/smtp/
+        ├── smtp.repository.ts      # nodemailer transport from SMTP_* env
+        └── smtp.types.ts
+```
+
+#### Usage
+
+```typescript
+@Injectable()
+export class InviteService {
+  constructor(private readonly mail: MailService) {}
+
+  async invite(email: string, url: string): Promise<void> {
+    await this.mail.send({
+      to: email,
+      subject: 'You are invited',
+      html: `<a href="${url}">Accept the invitation</a>`,
+    });
+  }
+}
+```
+
+Open `http://localhost:8025` to see the message. Full setup, env vars and how to add a second provider: [Mail Setup (API)](../01-setup/api-mail.md).
+
+---
+
 ## Setup Slice Checklist
 
 ### App Setup Slices
@@ -666,6 +750,8 @@ export class HealthController {
 - [ ] AWS slice (if using AWS services)
 - [ ] Redis slice (if using caching)
 - [ ] Health slice for monitoring
+- [ ] ID slice; every model `id String @id`, gateways mint with `formatId`
+- [ ] Mail slice (if the product sends email); Mailpit in docker-compose
 
 ---
 
@@ -677,3 +763,7 @@ export class HealthController {
 - [App i18n Setup](../01-setup/app-i18n.md)
 - [API Prisma Setup](../01-setup/api-prisma.md)
 - [API Swagger Setup](../01-setup/api-swagger.md)
+- [API Mail Setup](../01-setup/api-mail.md)
+- [API ID Setup](../01-setup/api-id.md)
+- [Identifier Standards](../02-standards/id-standards.md)
+- [API Docker Services](../01-setup/api-docker.md)

@@ -356,7 +356,7 @@ export class FilterApiKeyDto implements IFilterApiKey {
 
 ```typescript
 import {
-  IsString, IsNotEmpty, MinLength, MaxLength, Matches, IsEmail, IsUrl, IsUUID,
+  IsString, IsNotEmpty, MinLength, MaxLength, Matches, IsEmail, IsUrl,
   IsNumber, IsInt, Min, Max, IsPositive,
   IsBoolean, IsEnum,
   IsArray, ArrayMinSize, ArrayMaxSize,
@@ -364,6 +364,7 @@ import {
   IsOptional, ValidateNested,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
+import { IsEntityId } from '#setup/id';
 
 // --- String ---
 @IsString() @IsNotEmpty() @MinLength(2) @MaxLength(50)
@@ -379,7 +380,7 @@ password: string;
 @IsOptional() @IsUrl()
 website?: string;
 
-@IsUUID()
+@IsEntityId(ORGANIZATION_ID_PREFIX)   // primary ids by prefix, never @IsUUID(); see 02-standards/id-standards.md
 organizationId: string;
 
 // --- Number ---

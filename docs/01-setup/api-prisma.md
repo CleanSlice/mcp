@@ -124,7 +124,11 @@ The `.prisma` file should match the model name in lowercase:
 - `Team` model → `team.prisma`
 - `ApiKey` model → `apiKey.prisma`
 
-### 4. Use Import Syntax for Relations
+### 4. Primary Keys Have No Database Default
+
+Every model: `id String @id`, nothing else. The gateway mints the value with `formatId(prefix)` inside `withIdRetry`; `@default(uuid())`, `@default(cuid())` and `autoincrement()` are forbidden for primary keys. See [Identifier Standards](../02-standards/id-standards.md) and [ID Setup](./api-id.md).
+
+### 5. Use Import Syntax for Relations
 
 When referencing models from other slices, use `import`:
 
@@ -581,6 +585,7 @@ import { Team } from "../user/team"
 - [ ] NO `.prisma` files inside subfolders (always at slice root!)
 - [ ] NO committing merged schema (add to `.gitignore` optionally)
 - [ ] NO importing PrismaClient directly (use PrismaService)
+- [ ] NO `@default(uuid())` / `@default(cuid())` on `id` (the gateway mints it)
 
 ---
 

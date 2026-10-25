@@ -195,9 +195,10 @@ export class UserController {
 ```
 
 **Controller rules:**
-- Inject `IEntityGateway` (abstract), not concrete
+- Inject `IEntityGateway` (abstract), not concrete; when the slice has a service, inject the service instead
+- Never import from `data/`
 - Use Swagger decorators on every endpoint
-- Delegate all logic to gateway
+- Delegate all logic: pass-through CRUD goes to the gateway, anything with a business rule goes through the service
 
 ---
 
@@ -254,9 +255,12 @@ export class UserGateway implements IUserGateway {
   }
 
   async createUser(data: ICreateUserData) {
-    const result = await this.prisma.user.create({
-      data: this.map.toCreate(data),
-    });
+    // The gateway mints the primary key; see 02-standards/id-standards.md
+    const result = await withIdRetry(() =>
+      this.prisma.user.create({
+        data: { id: formatId(USER_ID_PREFIX), ...this.map.toCreate(data) },
+      }),
+    );
     return this.map.toData(result);
   }
 
@@ -299,9 +303,9 @@ export class UserMapper {
     };
   }
 
-  toCreate(data: ICreateUserData): Prisma.UserCreateInput {
+  /** Everything but the id: the gateway mints that with formatId(USER_ID_PREFIX). */
+  toCreate(data: ICreateUserData): Omit<Prisma.UserCreateInput, 'id'> {
     return {
-      id: `user-${uuid()}`,
       name: data.name,
       email: data.email,
       roles: data.roles,
@@ -605,6 +609,7 @@ export * from './filterUser.dto';
 - [ ] Concrete class implements abstract
 - [ ] Uses mapper for all transformations
 - [ ] Returns typed domain interfaces
+- [ ] Mints primary keys with `formatId(prefix)` inside `withIdRetry`; never `uuid()`/`cuid()`/`@default`
 
 ### DTOs
 
@@ -612,6 +617,7 @@ export * from './filterUser.dto';
 - [ ] Create/Update DTOs implement `ICreate{Entity}Data`
 - [ ] Has `@ApiProperty()` on every field
 - [ ] Has validators (`@IsString()`, `@IsNotEmpty()`)
+- [ ] Incoming ids use `@IsEntityId(prefix)`; route params use `EntityIdPipe`
 - [ ] Filter DTOs use `@Transform()` for type conversion
 
 ### Never Do
@@ -620,6 +626,7 @@ export * from './filterUser.dto';
 - [ ] NO direct Prisma access in controllers
 - [ ] NO TypeScript interfaces for DI tokens (use abstract classes)
 - [ ] NO manual data transformation in gateways (use mappers)
+- [ ] NO `@default(uuid())`, `cuid()`, `randomUUID()` for a primary key ([Identifier Standards](./id-standards.md))
 - [ ] NO writing generated artifacts from `bootstrap()` - starting the API must
       not modify a tracked file. `swagger-spec.json` is exported by
       `bun run swagger:generate`, never by a boot

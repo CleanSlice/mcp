@@ -161,7 +161,6 @@ slices/user/
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import DB, { Prisma } from '@prisma/client';
-import { v4 as uuid } from 'uuid';
 import { IUserData, ICreateUserData, IUpdateUserData, RoleTypes } from '../domain';
 
 export type IUserResponse = DB.User;
@@ -197,10 +196,9 @@ export class UserMapper {
     };
   }
 
-  toCreate(data: ICreateUserData): IUserCreateRequest {
-    const id = `user-${uuid()}`;
+  /** Everything but the id: the gateway mints that with formatId(USER_ID_PREFIX). */
+  toCreate(data: ICreateUserData): Omit<IUserCreateRequest, 'id'> {
     return {
-      id,
       name: data.name,
       email: data.email,
       roles: data.roles,
@@ -335,8 +333,8 @@ When an entity includes related data that has its own mapper, inject and use tha
 import DB, { Prisma } from '@prisma/client';
 import { Injectable } from '@nestjs/common';
 import { IApiKeyData, ICreateApiKeyData, IUpdateApiKeyData } from '../domain';
+import { randomBytes } from 'node:crypto';
 import { TeamMapper } from '#users/teams';
-import { v4 as uuid } from 'uuid';
 
 export type IApiKeyResponse = DB.ApiKey & {
   team: DB.Team;
@@ -369,14 +367,12 @@ export class ApiKeyMapper {
     };
   }
 
-  toCreate(data: ICreateApiKeyData): IApiKeyCreateRequest {
-    const id = `api-key-${uuid()}`;
-    const secret = `secret-${uuid()}`;
+  /** The id is minted by the gateway (formatId(API_KEY_ID_PREFIX)); the secret is not an id. */
+  toCreate(data: ICreateApiKeyData): Omit<IApiKeyCreateRequest, 'id'> {
     return {
-      id,
       team: { connect: { id: data.teamId } },
       name: data.name,
-      secret,
+      secret: `secret-${randomBytes(32).toString('base64url')}`,
       lastUsedAt: new Date(),
     };
   }
@@ -458,18 +454,20 @@ async getApiKey(id: string): Promise<IApiKeyData | null> {
 
 ## ID Generation
 
-```typescript
-import { v4 as uuid } from 'uuid';
+Mappers do **not** generate ids. The gateway mints the primary key inside the write and repeats the write on a collision:
 
-toCreate(data: ICreateUserData): Prisma.UserCreateInput {
-  return {
-    id: `user-${uuid()}`,
-    ...data,
-  };
-}
+```typescript
+// data/user.gateway.ts
+import { formatId, withIdRetry } from '#setup/id';
+
+const user = await withIdRetry(() =>
+  this.prisma.user.create({
+    data: { id: formatId(USER_ID_PREFIX), ...this.mapper.toCreate(data) },
+  }),
+);
 ```
 
-Common ID prefixes: `user-`, `org-`, `task-`, `inv-`
+Format, prefix registry and retry rules: [Identifier Standards](../02-standards/id-standards.md). Never `uuid()`, `cuid()` or a Prisma `@default` for a primary key.
 
 ---
 
@@ -524,6 +522,7 @@ export class UserModule {}
 - [ ] NO business logic
 - [ ] NO validation
 - [ ] NO error throwing (except type errors)
+- [ ] NO id generation - the gateway mints with `formatId(prefix)` ([Identifier Standards](../02-standards/id-standards.md))
 
 ---
 
