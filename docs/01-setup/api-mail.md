@@ -47,7 +47,7 @@ production_ready: true
 │  FEATURE SLICE (invite, auth, billing ...)                   │
 │  constructor(private readonly mail: MailService)             │
 └──────────────────────────┬───────────────────────────────────┘
-                           │ send(IMailMessage)
+                           │ send(IOutboundMail)
                            v
 ┌──────────────────────────────────────────────────────────────┐
 │  setup/mail  DOMAIN                                          │
@@ -79,7 +79,7 @@ api/src/slices/setup/mail/
 ├── mail.module.ts                  # @Global; binds IMailGateway -> SmtpMailGateway
 ├── index.ts
 ├── domain/
-│   ├── mail.types.ts               # IMailMessage, IMailResult
+│   ├── mail.types.ts               # IMailMessage, IOutboundMail, IMailResult
 │   ├── mail.gateway.ts             # abstract IMailGateway
 │   ├── mail.service.ts             # MailService
 │   ├── mail.service.spec.ts
@@ -87,7 +87,7 @@ api/src/slices/setup/mail/
 └── data/
     ├── mail.gateway.ts             # SmtpMailGateway extends IMailGateway
     ├── mail.gateway.spec.ts
-    ├── mail.mapper.ts              # IMailMessage <-> ISmtpMessage
+    ├── mail.mapper.ts              # IOutboundMail <-> ISmtpMessage
     └── repositories/
         └── smtp/
             ├── smtp.repository.ts  # nodemailer transport
@@ -169,6 +169,11 @@ export interface IMailMessage {
   bcc?: string | string[];
 }
 
+/** What reaches the gateway: the service has already resolved `from`. */
+export interface IOutboundMail extends IMailMessage {
+  from: string;
+}
+
 export interface IMailResult {
   messageId: string;
   accepted: string[];
@@ -180,7 +185,7 @@ export interface IMailResult {
 
 ```typescript
 export abstract class IMailGateway {
-  abstract send(message: IMailMessage): Promise<IMailResult>;
+  abstract send(message: IOutboundMail): Promise<IMailResult>;
 }
 ```
 
@@ -245,7 +250,7 @@ The black box. Only env vars and nodemailer; no imports from `domain/` or `data/
 ```typescript
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { createTransport, Transporter } from 'nodemailer';
+import { createTransport, SMTPSentMessageInfo, Transporter } from 'nodemailer';
 import { ISmtpConfig, ISmtpMessage, ISmtpSendResult } from './smtp.types';
 
 const toAddress = (entry: string | { address: string }): string =>
@@ -253,7 +258,7 @@ const toAddress = (entry: string | { address: string }): string =>
 
 @Injectable()
 export class SmtpRepository {
-  private readonly transporter: Transporter;
+  private readonly transporter: Transporter<SMTPSentMessageInfo>;
 
   constructor(config: ConfigService) {
     const smtp = SmtpRepository.readConfig(config);
@@ -301,7 +306,7 @@ The repository does not call `verify()` on startup. A missing relay should fail 
 ```typescript
 @Injectable()
 export class MailMapper {
-  toSmtp(message: IMailMessage): ISmtpMessage {
+  toSmtp(message: IOutboundMail): ISmtpMessage {
     return {
       from: message.from,
       to: message.to,
@@ -336,7 +341,7 @@ export class SmtpMailGateway extends IMailGateway {
     super();
   }
 
-  async send(message: IMailMessage): Promise<IMailResult> {
+  async send(message: IOutboundMail): Promise<IMailResult> {
     try {
       const result = await this.smtp.send(this.mapper.toSmtp(message));
       return this.mapper.toResult(result);
