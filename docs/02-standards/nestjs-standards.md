@@ -226,59 +226,63 @@ export class UserGateway implements IUserGateway {
     private map: UserMapper,
   ) {}
 
+  private get users() {
+    return this.prisma.db.public.User;
+  }
+
   async getUsers(filter?: IUserFilter) {
-    const where: Prisma.UserWhereInput = {};
-    if (filter?.email) where.email = { contains: filter.email, mode: 'insensitive' };
+    const page = filter?.page ?? 1;
+    const perPage = filter?.perPage ?? 20;
+    let users = this.users;
+    if (filter?.email) {
+      const pattern = `%${filter.email.replace(/[\\%_]/g, '\\$&')}%`; // LIKE wildcards taken literally
+      users = users.where((u) => u.email.ilike(pattern));
+    }
 
-    const results = await this.prisma.user.findMany({
-      where,
-      take: filter?.perPage ?? 20,
-      skip: ((filter?.page ?? 1) - 1) * (filter?.perPage ?? 20),
-    });
-
-    const total = await this.prisma.user.count({ where });
+    const [total, results] = await Promise.all([
+      users.aggregate((a) => ({ n: a.count() })).then((r) => r.n),
+      users
+        .orderBy([(u) => u.createdAt.desc(), (u) => u.id.desc()])
+        .offset((page - 1) * perPage)
+        .limit(perPage)
+        .all(),
+    ]);
 
     return {
       data: results.map((r) => this.map.toData(r)),
       meta: {
         total,
-        currentPage: filter?.page ?? 1,
-        perPage: filter?.perPage ?? 20,
-        lastPage: Math.ceil(total / (filter?.perPage ?? 20)),
+        currentPage: page,
+        perPage,
+        lastPage: Math.ceil(total / perPage),
       },
     };
   }
 
   async getUser(id: string) {
-    const result = await this.prisma.user.findUnique({ where: { id } });
+    const result = await this.users.first({ id });
+    if (!result) throw new UserNotFoundError(id);
     return this.map.toData(result);
   }
 
   async createUser(data: ICreateUserData) {
     // The gateway mints the primary key; see 02-standards/id-standards.md
-    const result = await withIdRetry(() =>
-      this.prisma.user.create({
-        data: { id: formatId(USER_ID_PREFIX), ...this.map.toCreate(data) },
-      }),
+    const createData = this.map.toCreate(data);
+    const result = await withIdRetry(
+      () => this.users.create({ id: formatId(USER_ID_PREFIX), ...createData }),
+      this.prisma.inTransaction,
     );
     return this.map.toData(result);
   }
 
   async updateUser(id: string, data: IUpdateUserData) {
-    const result = await this.prisma.user.update({
-      where: { id },
-      data: this.map.toUpdate(data),
-    });
+    const result = await this.users.where({ id }).update(this.map.toUpdate(data));
+    if (!result) throw new UserNotFoundError(id); // Prisma 8 answers null where Prisma 6 threw P2025
     return this.map.toData(result);
   }
 
   async deleteUser(id: string) {
-    try {
-      await this.prisma.user.delete({ where: { id } });
-      return true;
-    } catch {
-      return false;
-    }
+    return (await this.users.where({ id }).delete()) !== null;
   }
 }
 ```
@@ -292,19 +296,19 @@ export class UserGateway implements IUserGateway {
 export class UserMapper {
   constructor(private config: ConfigService) {}
 
-  toData(data: User): IUserData {
+  toData(data: PrismaRow<'User'>): IUserData {
     return {
       id: data.id,
       name: data.name,
       email: data.email,
-      roles: data.roles as RoleTypes[],
+      roles: [...data.roles] as RoleTypes[],
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     };
   }
 
   /** Everything but the id: the gateway mints that with formatId(USER_ID_PREFIX). */
-  toCreate(data: ICreateUserData): Omit<Prisma.UserCreateInput, 'id'> {
+  toCreate(data: ICreateUserData): Omit<PrismaCreate<'User'>, 'id'> {
     return {
       name: data.name,
       email: data.email,
@@ -313,7 +317,7 @@ export class UserMapper {
     };
   }
 
-  toUpdate(data: IUpdateUserData): Prisma.UserUpdateInput {
+  toUpdate(data: IUpdateUserData): PrismaUpdate<'User'> {
     return {
       name: data.name,
       roles: data.roles,
@@ -325,8 +329,8 @@ export class UserMapper {
 
 **Mapper methods:**
 - `toData()` - DB model → Domain interface
-- `toCreate()` - Create DTO → Prisma create input
-- `toUpdate()` - Update DTO → Prisma update input
+- `toCreate()` - Create data → `PrismaCreate<'User'>` (from `#setup/prisma`; Prisma 8 generates no `Prisma.UserCreateInput`)
+- `toUpdate()` - Update data → `PrismaUpdate<'User'>`
 
 ---
 

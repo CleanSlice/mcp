@@ -363,7 +363,7 @@ Located at: `api/src/slices/`
 
 | Slice | Purpose | Dependencies |
 |-------|---------|--------------|
-| `prisma/` | Database ORM and connection | @prisma/client |
+| `prisma/` | Database ORM and connection (Prisma 8) | @prisma/orm-postgres |
 | `core/` | Decorators, interceptors, error handling | - |
 | `swagger/` | The OpenAPI document: served at `/api`, exported by command | @nestjs/swagger |
 | `aws/` | AWS services (S3, Cognito, etc.) | @aws-sdk/* |
@@ -395,15 +395,17 @@ export class AppModule {}
 
 ### 1. Prisma Slice
 
-**Purpose:** Database ORM and connection management.
+**Purpose:** Database ORM and connection management, on Prisma 8. Copy it from the starter kit (`api/src/slices/setup/prisma/`); setup in [Prisma Setup (API)](../01-setup/api-prisma.md).
 
 #### Structure
 
 ```
-api/src/slices/prisma/
-├── prisma.module.ts
-├── prisma.service.ts
-└── index.ts
+api/src/slices/setup/prisma/
+├── prisma.module.ts     # @Global()
+├── prisma.service.ts    # connection, db.public.<Model>, transaction(), raw SQL
+├── prisma.types.ts      # PrismaRow / PrismaCreate / PrismaUpdate
+├── prisma.errors.ts     # isUniqueViolation, sqlState (SQLSTATE, not P2002)
+└── index.ts             # #setup/prisma
 ```
 
 #### prisma.module.ts
@@ -422,24 +424,19 @@ export class PrismaModule {}
 
 #### prisma.service.ts
 
-```typescript
-import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
-import { PrismaClient } from '@prisma/client';
-
-@Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy {
-  async onModuleInit() { await this.$connect(); }
-  async onModuleDestroy() { await this.$disconnect(); }
-}
-```
+Holds an `@prisma/orm-postgres` client built from the emitted contract (`generated/prisma/contract.json`); the ESM-only runtime is loaded with `import()` at module init. It exposes `db.public.<Model>`, an ambient `transaction()` that nested calls join, and the raw SQL helpers (`sql`, `rawRows`, `rawExecute`). Take the file from the kit.
 
 #### Usage
 
 ```typescript
 @Injectable()
-export class UserGateway implements IUserGateway {
-  constructor(private prisma: PrismaService) {}
-  async getUser(id: string) { return this.prisma.user.findUnique({ where: { id } }); }
+export class UserGateway extends IUserGateway {
+  constructor(private readonly prisma: PrismaService, private readonly mapper: UserMapper) { super(); }
+
+  async getUser(id: string) {
+    const user = await this.prisma.db.public.User.first({ id });
+    return user ? this.mapper.toData(user) : null;
+  }
 }
 ```
 
@@ -672,14 +669,15 @@ api/src/slices/setup/id/
 │   └── id.gateway.ts               # abstract IIdGateway { reserve(prefix) }
 └── data/
     ├── id.gateway.ts               # reserve() through IdReservation
-    └── idRetry.ts                  # withIdRetry (Prisma P2002 on ['id'], 5 attempts)
+    └── idRetry.ts                  # withIdRetry (unique violation 23505 on ['id'], 5 attempts)
 ```
 
 #### Usage
 
 ```typescript
-const user = await withIdRetry(() =>
-  this.prisma.user.create({ data: { id: formatId(USER_ID_PREFIX), ...createData } }),
+const user = await withIdRetry(
+  () => this.prisma.db.public.User.create({ id: formatId(USER_ID_PREFIX), ...createData }),
+  this.prisma.inTransaction,
 );
 
 @Param('id', new EntityIdPipe(USER_ID_PREFIX)) id: string

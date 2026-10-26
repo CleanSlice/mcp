@@ -349,8 +349,10 @@ export class UserNotFoundError extends BaseError {
 ```typescript
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '#setup/prisma';
+import { formatId, withIdRetry } from '#setup/id';
 import { IUserGateway } from '../domain/user.gateway';
-import { IUserData, ICreateUserData } from '../domain/user.types';
+import { IUserData, ICreateUserData, USER_ID_PREFIX } from '../domain/user.types';
+import { UserNotFoundError } from '../domain/errors';
 import { UserMapper } from './user.mapper';
 
 @Injectable()
@@ -360,38 +362,43 @@ export class UserGateway implements IUserGateway {
     private readonly mapper: UserMapper
   ) {}
 
+  private get users() {
+    return this.prisma.db.public.User;
+  }
+
   async create(data: ICreateUserData): Promise<IUserData> {
-    const user = await this.prisma.user.create({
-      data: this.mapper.toDatabase(data)
-    });
+    const createData = this.mapper.toCreate(data);
+    const user = await withIdRetry(
+      () => this.users.create({ id: formatId(USER_ID_PREFIX), ...createData }),
+      this.prisma.inTransaction,
+    );
     return this.mapper.toDomain(user);
   }
 
   async findById(id: string): Promise<IUserData | null> {
-    const user = await this.prisma.user.findUnique({ where: { id } });
+    const user = await this.users.first({ id });
     return user ? this.mapper.toDomain(user) : null;
   }
 
   async findByEmail(email: string): Promise<IUserData | null> {
-    const user = await this.prisma.user.findUnique({ where: { email } });
+    const user = await this.users.first({ email });
     return user ? this.mapper.toDomain(user) : null;
   }
 
   async findAll(): Promise<IUserData[]> {
-    const users = await this.prisma.user.findMany();
+    const users = await this.users.orderBy((u) => u.createdAt.desc()).all();
     return users.map(user => this.mapper.toDomain(user));
   }
 
   async update(id: string, data: Partial<ICreateUserData>): Promise<IUserData> {
-    const user = await this.prisma.user.update({
-      where: { id },
-      data: this.mapper.toDatabase(data)
-    });
+    const user = await this.users.where({ id }).update(this.mapper.toUpdate(data));
+    if (!user) throw new UserNotFoundError(id); // Prisma 8 answers null, no P2025
     return this.mapper.toDomain(user);
   }
 
   async delete(id: string): Promise<void> {
-    await this.prisma.user.delete({ where: { id } });
+    const user = await this.users.where({ id }).delete();
+    if (!user) throw new UserNotFoundError(id);
   }
 }
 ```
@@ -400,25 +407,33 @@ export class UserGateway implements IUserGateway {
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { User as PrismaUser } from '@prisma/client';
+import type { PrismaCreate, PrismaRow, PrismaUpdate } from '#setup/prisma';
 import { IUserData, ICreateUserData } from '../domain/user.types';
 
 @Injectable()
 export class UserMapper {
-  toDomain(prismaUser: PrismaUser): IUserData {
+  toDomain(row: PrismaRow<'User'>): IUserData {
     return {
-      id: prismaUser.id,
-      email: prismaUser.email,
-      name: prismaUser.name,
-      createdAt: prismaUser.createdAt,
-      updatedAt: prismaUser.updatedAt,
+      id: row.id,
+      email: row.email,
+      name: row.name,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
     };
   }
 
-  toDatabase(data: ICreateUserData | Partial<ICreateUserData>): Partial<PrismaUser> {
+  /** Everything but the id: the gateway mints it. */
+  toCreate(data: ICreateUserData): Omit<PrismaCreate<'User'>, 'id'> {
     return {
       email: data.email,
       name: data.name,
+    };
+  }
+
+  toUpdate(data: Partial<ICreateUserData>): PrismaUpdate<'User'> {
+    return {
+      ...(data.email !== undefined && { email: data.email }),
+      ...(data.name !== undefined && { name: data.name }),
     };
   }
 }
@@ -613,7 +628,7 @@ export class UserController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.prisma.user.findUnique({ where: { id } }); // WRONG
+    return this.prisma.db.public.User.first({ id }); // WRONG
   }
 }
 
@@ -650,7 +665,7 @@ export class UserService {
 ### Leaking Database Types
 
 ```typescript
-async findAll(): Promise<PrismaUser[]> { ... }  // BAD - Prisma type leaks
+async findAll(): Promise<PrismaRow<'User'>[]> { ... }  // BAD - Prisma type leaks
 async findAll(): Promise<IUserData[]> { ... }    // GOOD - domain type
 ```
 

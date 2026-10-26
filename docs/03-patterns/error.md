@@ -386,7 +386,7 @@ Gateways catch repository/external errors and convert to domain errors:
 ```typescript
 // data/user.gateway.ts
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '#prisma';
+import { PrismaService } from '#setup/prisma';
 import { IUserGateway } from '../domain/user.gateway';
 import { IUserData } from '../domain/user.types';
 import { UserMapper } from './user.mapper';
@@ -401,7 +401,7 @@ export class UserGateway implements IUserGateway {
 
   async getUser(id: string): Promise<IUserData | null> {
     try {
-      const result = await this.prisma.user.findUnique({ where: { id } });
+      const result = await this.prisma.db.public.User.first({ id });
       return result ? this.mapper.toData(result) : null;
     } catch (error) {
       throw new DatabaseError('Failed to fetch user', { cause: error as Error });
@@ -409,15 +409,15 @@ export class UserGateway implements IUserGateway {
   }
 
   async deleteUser(id: string): Promise<boolean> {
+    let deleted;
     try {
-      await this.prisma.user.delete({ where: { id } });
-      return true;
+      deleted = await this.prisma.db.public.User.where({ id }).delete();
     } catch (error) {
-      if (error.code === 'P2025') {
-        throw new UserNotFoundError(id);
-      }
       throw new DatabaseError('Failed to delete user', { cause: error as Error });
     }
+    // Prisma 8 answers null for a missing row (Prisma 6 threw P2025).
+    if (!deleted) throw new UserNotFoundError(id);
+    return true;
   }
 }
 ```

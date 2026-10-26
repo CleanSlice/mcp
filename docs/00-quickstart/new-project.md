@@ -446,7 +446,7 @@ import { AuthService, UserDto } from '#api';
 
 - [ ] Run `bunx @nestjs/cli new api --skip-install --skip-git`, then `bun install`
 - [ ] Create `api/src/slices/` folder
-- [ ] Configure Prisma ([api-prisma.md](../01-setup/api-prisma.md))
+- [ ] Configure Prisma 8 ([api-prisma.md](../01-setup/api-prisma.md))
 - [ ] Setup Swagger ([api-swagger.md](../01-setup/api-swagger.md))
 - [ ] Configure tsconfig paths for `#` aliases
 - [ ] Create first feature slice

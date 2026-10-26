@@ -149,10 +149,11 @@ formatId('user', counter) === 'user-afraid-swans-nmkjhgfedcba'   // 22 bytes rea
 ## Prisma Models
 
 ```prisma
+// use prisma-8
 model User {
   id        String   @id        // minted by the gateway: formatId(USER_ID_PREFIX)
   email     String   @unique
-  createdAt DateTime @default(now())
+  createdAt TimestamptzJsDate(3) @default(now())
 }
 ```
 
@@ -169,10 +170,9 @@ import { USER_ID_PREFIX } from '../domain/user.types';
 
 async createUser(data: ICreateUserData): Promise<IUserData> {
   const createData = this.mapper.toCreate(data);          // everything but the id
-  const user = await withIdRetry(() =>
-    this.prisma.user.create({
-      data: { id: formatId(USER_ID_PREFIX), ...createData },
-    }),
+  const user = await withIdRetry(
+    () => this.prisma.db.public.User.create({ id: formatId(USER_ID_PREFIX), ...createData }),
+    this.prisma.inTransaction,
   );
   return this.mapper.toData(user);
 }
@@ -186,8 +186,8 @@ async createUser(data: ICreateUserData): Promise<IUserData> {
 
 `withIdRetry(work, insideTransaction = false)`:
 
-- Repeats `work` at most **5** times (`ID_MAX_ATTEMPTS`), only for a unique violation on exactly the `id` column: Prisma 6 `P2002` with `meta.target` `['id']`. Everything else is rethrown on the first attempt.
-- **Inside `$transaction`, pass `insideTransaction = true`.** A failed statement aborts the PostgreSQL transaction; its owner repeats the whole unit of work.
+- Repeats `work` at most **5** times (`ID_MAX_ATTEMPTS`), only for a unique violation on exactly the `id` column: SQLSTATE `23505` whose key is `(id)`, read by `isUniqueViolation(error, ['id'])` from `#setup/prisma`. Everything else is rethrown on the first attempt.
+- **Inside `prisma.transaction()`, pass `this.prisma.inTransaction` (true there).** A failed statement aborts the PostgreSQL transaction; its owner repeats the whole unit of work.
 - **External effects stay outside `work`.** The callback is one database write.
 - A duplicate `email` is a domain error for the service, not a reason to mint again.
 

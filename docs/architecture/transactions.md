@@ -13,7 +13,7 @@ Use an explicit atomic operation when several local writes must either all commi
 
 The coordinating use case owns a domain gateway contract describing the business result. Its data implementation owns the database transaction. Place coordination in a slice/group permitted to depend on every participating contract; do not introduce upward imports into lower groups. The service decides policy; persistence constraints enforce invariants at commit time.
 
-Never pass PrismaClient or Prisma.TransactionClient through domain contracts. A data adapter may compose transaction-aware persistence helpers behind permitted boundaries, but each helper must use the same transaction, not silently start an independent connection. Document which writes participate and which remain eventual. If the operation spans databases, a local transaction cannot make the whole workflow atomic; use a durable workflow and explicit compensation.
+Never pass a Prisma client or transaction handle through domain contracts. On Prisma 8, `PrismaService.transaction()` is ambient: every gateway that reads `this.prisma.db` inside the callback runs on the same transaction without a `tx` parameter, and a nested `transaction()` joins the outer one instead of opening a second connection (see [Prisma Setup → Transactions](../01-setup/api-prisma.md#transactions)). A data adapter may compose transaction-aware persistence helpers behind permitted boundaries, but each helper must use the same transaction, not silently start an independent connection. Document which writes participate and which remain eventual. If the operation spans databases, a local transaction cannot make the whole workflow atomic; use a durable workflow and explicit compensation.
 
 ```typescript
 // domain/allocation.gateway.ts — no database types
@@ -30,7 +30,19 @@ export abstract class IAllocationGateway {
 }
 ```
 
-The data adapter commits the workspace, initial membership, operation receipt and outbox record in one database transaction. Return domain data through a mapper. A thrown error rolls all participating writes back. Do not call a remote payment or provisioning API while holding this transaction open.
+The data adapter commits the workspace, initial membership, operation receipt and outbox record in one database transaction. Return domain data through a mapper.
+
+```typescript
+// data/allocation.gateway.ts
+async allocate(input: IAllocateWorkspaceData): Promise<IAllocationData> {
+  return this.prisma.transaction(async () => {
+    const workspace = await this.workspaceGateway.create(input);          // same transaction
+    await this.membershipGateway.addOwner(workspace.id, input.subjectId); // same transaction
+    const operation = await this.operationGateway.record(workspace.id);   // same transaction
+    return this.mapper.toAllocation(workspace, operation);
+  });
+}
+``` A thrown error rolls all participating writes back. Do not call a remote payment or provisioning API while holding this transaction open.
 
 ## Concurrent invariants
 

@@ -269,11 +269,12 @@ After approval, I will detail the file structure for each slice.
 
 ### Database Schema
 ```prisma
+// use prisma-8
 model Chat {
   id        String    @id            // minted by the gateway: formatId('chat')
   title     String
   messages  Message[]
-  createdAt DateTime  @default(now())
+  createdAt TimestamptzJsDate(3) @default(now())
 }
 
 model Message {
@@ -282,7 +283,7 @@ model Message {
   role      String
   chatId    String
   chat      Chat     @relation(fields: [chatId], references: [id])
-  createdAt DateTime @default(now())
+  createdAt TimestamptzJsDate(3) @default(now())
 }
 ```
 
@@ -508,6 +509,7 @@ Users can create, view, edit, and delete projects within their team.
 
 ### Database Schema
 ```prisma
+// use prisma-8
 model Project {
   id          String   @id
   name        String
@@ -515,8 +517,8 @@ model Project {
   status      String   @default("active")
   teamId      String
   team        Team     @relation(fields: [teamId], references: [id])
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt   TimestamptzJsDate(3) @default(now())
+  updatedAt   temporal.timestamptzJsDate(3, onCreate: now, onUpdate: now)
 }
 ```
 

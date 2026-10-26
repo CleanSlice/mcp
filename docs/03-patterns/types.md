@@ -332,7 +332,7 @@ async createUser(data: ICreateUserData): Promise<IUserData> {
 
 ```typescript
 // data/user.mapper.ts
-toDomain(prismaUser: PrismaUser): IUserData {
+toDomain(prismaUser: PrismaRow<'User'>): IUserData { // PrismaRow from #setup/prisma
   return { id: prismaUser.id, email: prismaUser.email, ... };
 }
 ```
