@@ -398,7 +398,7 @@ await users.upsert({ create: { … }, update: { … }, conflictOn: { email } });
 - Take `and` / `or` / `not` from `PrismaService`, not from `@prisma/orm-postgres/orm-client`: that module is ESM-only and a static import breaks Jest.
 - A JSON path, an array membership or anything else the proxy cannot say: `.where(() => this.prisma.condition\`${role} = ANY("roles")\`)`.
 
-### Errors
+### Errors: unique violations, foreign keys, not found
 
 Prisma 8 surfaces the database's own error (`SqlQueryError` with `sqlState`, the `pg` error with `constraint`/`detail` down the `cause` chain), not `PrismaClientKnownRequestError`. Use the helpers from `#setup/prisma`:
 
