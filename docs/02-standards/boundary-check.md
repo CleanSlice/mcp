@@ -71,12 +71,12 @@ bun add -d dependency-cruiser
 {
   "scripts": {
     "check": "node scripts/cleanslice-check.cjs",
-    "predev": "bun run check && bun run docker && bun run generate && bun run migrate"
+    "predev": "bun run check && bun run docker && bun run db:deploy"
   }
 }
 ```
 
-`predev` runs before `dev` automatically — nothing else to remember. Put `bun run check` **first**: a violation then stops the start before docker, prisma, or nest do any work.
+`predev` runs before `dev` automatically — nothing else to remember. Put `bun run check` **first**: a violation then stops the start before docker, the migrations or nest do any work.
 
 ---
 
@@ -171,14 +171,14 @@ Measured on a MacBook, `dependency-cruiser` 18 (also runs on 16):
 | starter kit | 2 | 64 | ~0.30 s |
 | agentfy2 | 8 | 348 | ~0.55 s |
 
-End to end, `bun run dev` in the starter kit — docker, prisma-import, migrate, a full nest compile, up to "Nest application successfully started":
+End to end, `bun run dev` in the starter kit — docker, migrations, a full nest compile, up to "Nest application successfully started" (measured on the Prisma 6 kit, whose `predev` still ran prisma-import):
 
 | | run 1 | run 2 |
 |---|---|---|
 | without the check | 5.66 s | 5.43 s |
 | with the check | 6.08 s | 6.08 s |
 
-Half a second on a `dev` start that already waits for docker, prisma-import and a nest compile is not the reason your start feels slow. There is deliberately no "light mode": a check you can skip is a check that gets skipped.
+Half a second on a `dev` start that already waits for docker, the migrations and a nest compile is not the reason your start feels slow. There is deliberately no "light mode": a check you can skip is a check that gets skipped.
 
 ---
 

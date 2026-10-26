@@ -65,7 +65,7 @@ api/src/slices/setup/id/
         └── id.gateway.spec.ts
 ```
 
-`setup/prisma/prisma.errors.ts` adds `isUniqueViolation(error, columns?)`, which `withIdRetry` uses to recognise a Prisma 6 `P2002` on exactly `['id']`.
+`setup/prisma/prisma.errors.ts` provides `isUniqueViolation(error, columns?)`, which `withIdRetry` uses to recognise a unique violation (SQLSTATE `23505`, Prisma 8) on exactly `['id']`.
 
 ---
 
@@ -119,17 +119,19 @@ export class AppModule {}
 
 ## 4. Migrate
 
-`id.prisma` adds the reservation table. Merge the schemas and create the migration:
+`id.prisma` (`// use prisma-8`, `model IdReservation { id String @id }`) adds the reservation table. `prisma.config.ts` picks it up by its glob; plan and apply the migration (Prisma 8, see [Prisma Setup](./api-prisma.md#migrations)):
 
 ```bash
-bun run migrate     # prisma-import --force && prisma migrate dev
+bun run prisma:emit
+bun run db:plan -- --name id_reservation
+bunx prisma migration ref set deploy <hash>   # the plan's "to" hash
+bun run db:deploy
 ```
 
 ```sql
--- CreateTable
-CREATE TABLE "IdReservation" (
-    "id" TEXT NOT NULL,
-    CONSTRAINT "IdReservation_pkey" PRIMARY KEY ("id")
+CREATE TABLE "public"."IdReservation" (
+  "id" text NOT NULL,
+  PRIMARY KEY ("id")
 );
 ```
 
@@ -160,10 +162,10 @@ model User {
 // data/user.gateway.ts
 import { formatId, withIdRetry } from '#setup/id';
 
-const user = await withIdRetry(() =>
-  this.prisma.user.create({
-    data: { id: formatId(USER_ID_PREFIX), ...this.mapper.toCreate(data) },
-  }),
+const createData = this.mapper.toCreate(data);
+const user = await withIdRetry(
+  () => this.prisma.db.public.User.create({ id: formatId(USER_ID_PREFIX), ...createData }),
+  this.prisma.inTransaction, // inside prisma.transaction() the owner of the unit retries
 );
 ```
 
@@ -215,7 +217,7 @@ Must be empty. A project that already issued `user-<uuid>` rows adds the `prefix
 ## Testing
 
 - `domain/tests/idFormat.spec.ts`: the control vector, the pinned versions, every refused shape, 10 000 round trips.
-- `data/tests/idRetry.spec.ts`: retries only `P2002` on `['id']`, bounded at 5, never inside a transaction, never a look-alike error.
+- `data/tests/idRetry.spec.ts`: retries only a unique violation (SQLSTATE `23505`) on `['id']`, bounded at 5, never inside a transaction, never a Prisma 6 look-alike error.
 - `data/tests/id.gateway.spec.ts`: `reserve()` mints a fresh candidate on every attempt.
 - `id.validator.spec.ts`: `@IsEntityId`, `EntityIdPipe`, `entityId`.
 - Feature tests take a fake `IIdGateway` (`{ reserve: jest.fn() }`) and assert on `isCanonicalId(row.id, PREFIX)`.
@@ -237,6 +239,6 @@ Must be empty. A project that already issued `user-<uuid>` rows adds the `prefix
 ## Related Documentation
 
 - [Identifier Standards](../02-standards/id-standards.md) - The format, rules, legacy and transition
-- [Prisma Setup (API)](./api-prisma.md) - Schema merging and migrations
+- [Prisma Setup (API)](./api-prisma.md) - Prisma 8 contract, migrations, error helpers
 - [Gateway Pattern](../03-patterns/gateway.md)
 - [DTO Pattern](../03-patterns/dto.md)

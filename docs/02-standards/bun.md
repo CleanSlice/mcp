@@ -70,9 +70,9 @@ Everything you knew in npm, in the form to use now:
 
 ## What Does Not Change
 
-- **Pre-scripts still run.** `bun run dev` runs `predev` first, `bun run migrate` runs `premigrate` — verified on Bun 1.3. The whole CleanSlice flow depends on it: `predev` is where docker, prisma-import, migrations and the [boundary check](./boundary-check.md) live.
+- **Pre-scripts and lifecycle scripts still run.** `bun run dev` runs `predev` first and `bun install` runs the api's `postinstall` (`prisma contract emit`) — verified on Bun 1.3. The whole CleanSlice flow depends on it: `predev` is where docker, the migrations (`bun run db:deploy`) and the [boundary check](./boundary-check.md) live.
 - **The scripts themselves.** `nest build`, `nuxt dev`, `jest`, `eslint` — same binaries, same flags.
-- **Node in production.** The api's Docker runner stage still runs the built output on Node. Bun installs and builds; what serves traffic is unchanged, which is why a runtime image without Bun must call a local binary (`node_modules/.bin/prisma migrate deploy`) instead of `bunx`.
+- **Node in production.** The api's Docker runner stage still runs the built output on Node. Bun installs and builds; what serves traffic is unchanged, which is why a runtime image without Bun runs `node scripts/migrate.mjs` (it calls the Prisma CLI with `node`) instead of `bunx`.
 
 ---
 
@@ -114,6 +114,7 @@ image is cheaper than remembering which is which.
 3. **Docker installs with `--frozen-lockfile`.** A build that quietly updates the lockfile ships something nobody tested.
 4. **New project scaffolds that hard-code a package manager get `--skip-install`**, then `bun install`. The NestJS CLI's `--package-manager` flag has no Bun value; do not pass `npm` to it.
 5. **Documentation counts as code here.** A doc that still says `npm install` teaches every agent reading it to break rule 1.
+6. **`trustedDependencies` replaces Bun's default allow-list.** Once `package.json` has the field (the Prisma 8 api needs `prisma` in it), only the packages it names run their install scripts: list `bcrypt`, `esbuild` and anything else `bun pm untrusted` reports as blocked. Verified on Bun 1.3: adding `"trustedDependencies": ["prisma"]` alone blocked bcrypt's install script.
 
 ---
 

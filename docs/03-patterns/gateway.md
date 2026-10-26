@@ -312,12 +312,16 @@ export interface IUserGateway {
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
 import { IUserGateway, IUserFilter } from '../domain/user.gateway';
-import { IUserData, ICreateUserData, IUpdateUserData } from '../domain/user.types';
+import { IUserData, ICreateUserData, IUpdateUserData, USER_ID_PREFIX } from '../domain/user.types';
+import { UserNotFoundError } from '../domain/user.errors';
 import { UserMapper } from './user.mapper';
-import { PrismaService } from '#prisma';
+import { PrismaService } from '#setup/prisma';
+import { formatId, withIdRetry } from '#setup/id';
 import { IMetaResponse } from '#core/domain';
+
+/** `%`, `_` and `\` are LIKE wildcards; escape them so a search matches them literally. */
+const likeLiteral = (value: string): string => value.replace(/[\\%_]/g, '\\$&');
 
 @Injectable()
 export class UserGateway implements IUserGateway {
@@ -326,36 +330,36 @@ export class UserGateway implements IUserGateway {
     private map: UserMapper,
   ) {}
 
+  private get users() {
+    return this.prisma.db.public.User;
+  }
+
   async getUsers(filter?: IUserFilter): Promise<{ data: IUserData[]; meta: IMetaResponse }> {
-    const options: Prisma.UserFindManyArgs = { where: {} };
-
-    if (filter?.email) {
-      options.where.email = filter.email;
-    }
-    if (filter?.search) {
-      options.where.OR = [
-        { name: { contains: filter.search } },
-        { email: { contains: filter.search } },
-      ];
-    }
-    if (filter?.ids) {
-      options.where.id = { in: filter.ids };
-    }
-    if (filter?.page && filter?.perPage) {
-      options.skip = (filter.page - 1) * filter.perPage;
-      options.take = filter.perPage;
-    }
-    // Every ordering ends on the primary key. With LIMIT/OFFSET, rows that tie on
-    // createdAt have no stable position and show up twice or never across pages.
-    options.orderBy = [{ createdAt: 'desc' }, { id: 'desc' }];
-
-    const [results, total] = await Promise.all([
-      this.prisma.user.findMany(options),
-      this.prisma.user.count({ where: options.where }),
-    ]);
-
     const perPage = filter?.perPage ?? 20;
     const currentPage = filter?.page ?? 1;
+
+    let users = this.users;
+    if (filter?.email) {
+      users = users.where({ email: filter.email });
+    }
+    if (filter?.search) {
+      const pattern = `%${likeLiteral(filter.search)}%`;
+      users = users.where((u) => this.prisma.or(u.name.ilike(pattern), u.email.ilike(pattern)));
+    }
+    if (filter?.ids) {
+      users = users.where((u) => u.id.in(filter.ids));
+    }
+
+    const [results, total] = await Promise.all([
+      users
+        // Every ordering ends on the primary key. With LIMIT/OFFSET, rows that tie on
+        // createdAt have no stable position and show up twice or never across pages.
+        .orderBy([(u) => u.createdAt.desc(), (u) => u.id.desc()])
+        .offset((currentPage - 1) * perPage)
+        .limit(perPage)
+        .all(),
+      users.aggregate((a) => ({ n: a.count() })).then((r) => r.n),
+    ]);
 
     return {
       data: results.map((result) => this.map.toData(result)),
@@ -364,61 +368,57 @@ export class UserGateway implements IUserGateway {
   }
 
   async getUser(id: string): Promise<IUserData | null> {
-    const result = await this.prisma.user.findUnique({ where: { id } });
+    const result = await this.users.first({ id });
     return result ? this.map.toData(result) : null;
   }
 
   async createUser(data: ICreateUserData): Promise<IUserData> {
     // Mint the primary key inside the write; retry only an `id` collision.
     // Format and rules: 02-standards/id-standards.md
-    const result = await withIdRetry(() =>
-      this.prisma.user.create({
-        data: { id: formatId(USER_ID_PREFIX), ...this.map.toCreate(data) },
-      }),
+    const createData = this.map.toCreate(data);
+    const result = await withIdRetry(
+      () => this.users.create({ id: formatId(USER_ID_PREFIX), ...createData }),
+      this.prisma.inTransaction,
     );
     return this.map.toData(result);
   }
 
   async updateUser(id: string, data: IUpdateUserData): Promise<IUserData> {
-    const result = await this.prisma.user.update({
-      where: { id },
-      data: this.map.toUpdate(data),
-    });
+    const result = await this.users.where({ id }).update(this.map.toUpdate(data));
+    // Prisma 8 answers null for a missing row where Prisma 6 threw P2025.
+    if (!result) throw new UserNotFoundError(id);
     return this.map.toData(result);
   }
 
   async deleteUser(id: string): Promise<boolean> {
-    try {
-      await this.prisma.user.delete({ where: { id } });
-      return true;
-    } catch {
-      return false;
-    }
+    return (await this.users.where({ id }).delete()) !== null;
   }
 }
 ```
+
+Query reference (operators, `include`, aggregates, raw SQL, transactions): [Prisma Setup (API)](../01-setup/api-prisma.md#using-prismaservice-in-gateways).
 
 ### Mapper (data/user.mapper.ts)
 
 ```typescript
 import { Injectable } from '@nestjs/common';
-import { User as PrismaUser } from '@prisma/client';
+import type { PrismaCreate, PrismaRow, PrismaUpdate } from '#setup/prisma';
 import { IUserData, ICreateUserData, IUpdateUserData } from '../domain/user.types';
 
 @Injectable()
 export class UserMapper {
-  toData(user: PrismaUser): IUserData {
+  toData(user: PrismaRow<'User'>): IUserData {
     return {
       id: user.id, email: user.email, name: user.name,
       createdAt: user.createdAt, updatedAt: user.updatedAt,
     };
   }
 
-  toCreate(data: ICreateUserData): Prisma.UserCreateInput {
+  toCreate(data: ICreateUserData): Omit<PrismaCreate<'User'>, 'id'> {
     return { email: data.email, name: data.name };
   }
 
-  toUpdate(data: IUpdateUserData): Prisma.UserUpdateInput {
+  toUpdate(data: IUpdateUserData): PrismaUpdate<'User'> {
     return {
       ...(data.email && { email: data.email }),
       ...(data.name && { name: data.name }),
@@ -435,7 +435,7 @@ import { UserController } from './user.controller';
 import { UserService } from './domain/user.service';
 import { UserGateway } from './data/user.gateway';
 import { UserMapper } from './data/user.mapper';
-import { PrismaModule } from '#prisma';
+import { PrismaModule } from '#setup/prisma';
 
 @Module({
   imports: [PrismaModule],

@@ -11,11 +11,13 @@ tags: [quickstart, rules, architecture]
 
 ## Overview
 
-CleanSlice uses vertical slices with Presentation → Domain ← Data. Use SINGULAR slice names (`user/`) and plural resource routes (`/users`); DTO filenames are camelCase. The fixed stack is NestJS + Prisma and Nuxt + Vue + Pinia.
+CleanSlice uses vertical slices with Presentation → Domain ← Data. Use SINGULAR slice names (`user/`) and plural resource routes (`/users`); DTO filenames are camelCase. The fixed stack is NestJS + Prisma 8 and Nuxt + Vue + Pinia.
 
 Domain services hold business policy and depend on abstract gateway contracts. Data gateways implement those contracts and map persistence output into domain types. Do not import Prisma or concrete data gateways into domain. Prisma already supplies the database repository; repositories are permitted for self-contained external adapters or homogeneous capabilities, with their own types and no domain imports. Cross-slice imports follow the project's declared dependency groups and public contracts.
 
 Every primary key is `<prefix>-<adjective>-<noun>-<12 Crockford>`: `id String @id` with no Prisma default, minted in the gateway by `formatId(prefix)` inside `withIdRetry`, validated at the boundary with `@IsEntityId(prefix)` or `EntityIdPipe`; never `uuid()`, `cuid()` or `randomUUID()`. See [Identifier Standards](../02-standards/id-standards.md).
+
+The api runs **Prisma 8**: each slice owns a `{slice}.prisma` (first line `// use prisma-8`) that `prisma.config.ts` globs into a contract emitted to `generated/prisma`; there is no `schema.prisma`, `datasource`/`generator` block, `prisma generate` or prisma-import. Gateways query `this.prisma.db.public.<Model>` and type rows with `PrismaRow<'Model'>`; multi-record writes use `prisma.transaction()`; migrations are planned with `bun run db:plan` and applied only by `bun run db:deploy`. See [Prisma Setup](../01-setup/api-prisma.md); a Prisma 6 project follows [Upgrading a Prisma 6 project](../01-setup/api-prisma-upgrade.md).
 
 Use Pinia stores for state and Provider.vue as component entry. Implement API before App. Use the target database engine for migration/concurrency tests, not an automatic SQLite substitute.
 
