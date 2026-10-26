@@ -1,8 +1,8 @@
 ---
 id: setup-app-theme
 title: Theme Setup (App)
-version: 1.0.0
-last_updated: 2025-12-19
+version: 2.0.0
+last_updated: 2026-10-08
 
 pattern: setup
 complexity: fundamental
@@ -14,6 +14,7 @@ tags:
   - theme
   - shadcn-vue
   - tailwind
+  - tailwind-v4
   - css
   - dark-mode
   - ui-components
@@ -21,8 +22,9 @@ tags:
 keywords:
   - theme setup
   - shadcn-vue
-  - tailwind css
+  - tailwind css v4
   - css variables
+  - oklch
   - dark mode
   - ui components
   - design system
@@ -34,7 +36,7 @@ production_ready: true
 
 # Theme Setup (App)
 
-> **The Theme slice provides the design system foundation** for your Nuxt application. It configures shadcn-vue, Tailwind CSS, CSS variables for theming, and utility functions for class management.
+> **The Theme slice provides the design system foundation** for your Nuxt application. It registers Tailwind CSS v4 and shadcn-vue, wires semantic tokens to CSS variables, holds every shared UI component, and ships the `cn()` utility.
 
 ---
 
@@ -46,7 +48,7 @@ production_ready: true
 slices/
 ├── setup/
 │   └── theme/          # Theme configuration lives here
-├── user/               # Feature slices import from theme
+├── user/               # Feature slices use theme components
 ├── product/
 └── ...
 ```
@@ -65,15 +67,15 @@ The `shadcn-nuxt` module auto-imports all UI components. No import statements ne
 
 ### 3. Use `#theme` Alias for Manual Imports
 
-When you need to import in `<script>` (utilities, programmatic use):
+When you need to import in `<script>` (utilities, variants, programmatic use):
 
 ```typescript
 // CORRECT - Use alias
-import { Button } from '#theme/components/ui/button';
+import { buttonVariants } from '#theme/components/ui/button';
 import { cn } from '#theme/utils';
 
 // WRONG - Relative paths
-import { Button } from '../../../setup/theme/components/ui/button';
+import { cn } from '../../../setup/theme/utils';
 ```
 
 ### 4. All UI Components Live in Theme
@@ -86,32 +88,36 @@ slices/setup/theme/components/ui/button/Button.vue
 slices/user/components/ui/button/Button.vue  // NEVER
 ```
 
+### 5. Tailwind v4: Configuration is CSS
+
+There is no `tailwind.config.js` and no `@nuxtjs/tailwindcss` module. Tokens are declared in `tailwind.css` with `@theme inline`; values live in a theme file under `assets/themes/`. `components.json` sits at the **app root** and names the active theme.
+
 ---
 
 ## File Location & Naming
 
 ```
-slices/setup/theme/
-├── assets/
-│   ├── css/
-│   │   └── tailwind.css      # Tailwind + CSS variables
-│   └── scss/
-│       └── main.scss         # Custom SCSS styles
-├── components/
-│   └── ui/                   # shadcn-vue components
-│       ├── button/
-│       ├── card/
-│       ├── input/
-│       └── ...
-├── plugins/
-│   └── fonts.ts              # Font loading plugin
-├── utils/
-│   ├── index.ts
-│   └── cn.ts                 # Class name utility
-├── index.ts                  # Public exports
-├── nuxt.config.ts            # Slice configuration
-├── tailwind.config.js        # Tailwind configuration
-└── components.json           # shadcn-vue CLI config
+app/
+├── components.json               # shadcn CLI config + active theme name (APP ROOT)
+└── slices/setup/theme/
+    ├── nuxt.config.ts            # shadcn-nuxt, Tailwind Vite plugin, #theme alias
+    ├── assets/
+    │   ├── css/
+    │   │   └── tailwind.css      # @import tailwindcss, @theme inline, base layer
+    │   └── themes/
+    │       ├── default.css       # one theme = one file (:root + .dark)
+    │       └── cleanslice.css
+    ├── components/
+    │   └── ui/                   # shadcn-vue components
+    │       ├── button/
+    │       │   ├── Button.vue
+    │       │   └── index.ts      # exports component + cva variants
+    │       ├── card/
+    │       └── ...
+    ├── utils/
+    │   ├── index.ts
+    │   └── cn.ts                 # Class name utility
+    └── index.ts                  # Public exports
 ```
 
 ---
@@ -119,9 +125,11 @@ slices/setup/theme/
 ## Installation
 
 ```bash
-# All dependencies
-bun add -d @nuxtjs/tailwindcss shadcn-nuxt tailwindcss-animate @tailwindcss/typography sass sass-loader vite-svg-loader @types/webfontloader
-bun add vee-validate @vee-validate/zod zod vaul-vue clsx tailwind-merge lucide-vue-next webfontloader
+# Tailwind v4 + shadcn
+bun add -d tailwindcss @tailwindcss/vite tw-animate-css shadcn-nuxt @nuxtjs/color-mode
+
+# Runtime
+bun add reka-ui class-variance-authority clsx tailwind-merge lucide-vue-next
 ```
 
 ---
@@ -132,200 +140,173 @@ bun add vee-validate @vee-validate/zod zod vaul-vue clsx tailwind-merge lucide-v
 
 ```typescript
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
-import svgLoader from 'vite-svg-loader';
+import { dirname, resolve } from 'path';
+import { readFileSync } from 'fs';
+import tailwindcss from '@tailwindcss/vite';
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
+const appRoot = resolve(currentDir, '../../..');
+
+// Read the active theme name from components.json
+const componentsJson = JSON.parse(
+  readFileSync(resolve(appRoot, 'components.json'), 'utf-8'),
+);
+const themeName = componentsJson.tailwind?.theme || 'default';
+const themeCss = `#theme/assets/themes/${themeName}.css`;
 
 export default defineNuxtConfig({
-  modules: ['@nuxtjs/tailwindcss', 'shadcn-nuxt'],
-  css: ['#theme/assets/scss/main.scss'],
+  modules: ['shadcn-nuxt'],
+  css: [themeCss, '#theme/assets/css/tailwind.css'],
   alias: {
     '#theme': currentDir,
   },
-  tailwindcss: {
-    cssPath: '#theme/assets/css/tailwind.css',
-    configPath: './tailwind.config',
-  },
   vite: {
-    plugins: [svgLoader()],
+    plugins: [tailwindcss()],
   },
   shadcn: {
     prefix: '',
     componentDir: './slices/setup/theme/components/ui',
   },
+  components: {
+    dirs: [],
+  },
 });
 ```
 
-> **Auto-Import**: The `shadcn-nuxt` module automatically registers all components from `componentDir`. No manual imports needed in templates!
-
-### `slices/setup/theme/tailwind.config.js`
-
-```javascript
-const animate = require('tailwindcss-animate');
-
-/** @type {import('tailwindcss').Config} */
-module.exports = {
-  darkMode: ['class'],
-  safelist: ['dark'],
-
-  theme: {
-    container: {
-      center: true,
-      padding: '2rem',
-      screens: {
-        '2xl': '1400px',
-      },
-    },
-    extend: {
-      fontFamily: {
-        manrope: ['Manrope', 'sans-serif'],
-      },
-      colors: {
-        border: 'hsl(var(--border))',
-        input: 'hsl(var(--input))',
-        ring: 'hsl(var(--ring))',
-        background: 'hsl(var(--background))',
-        foreground: 'hsl(var(--foreground))',
-        primary: {
-          DEFAULT: 'hsl(var(--primary))',
-          foreground: 'hsl(var(--primary-foreground))',
-        },
-        secondary: {
-          DEFAULT: 'hsl(var(--secondary))',
-          foreground: 'hsl(var(--secondary-foreground))',
-        },
-        success: {
-          DEFAULT: 'hsl(var(--success))',
-          foreground: 'hsl(var(--success-foreground))',
-        },
-        warning: {
-          DEFAULT: 'hsl(var(--warning))',
-          foreground: 'hsl(var(--warning-foreground))',
-        },
-        info: {
-          DEFAULT: 'hsl(var(--info))',
-          foreground: 'hsl(var(--info-foreground))',
-        },
-        destructive: {
-          DEFAULT: 'hsl(var(--destructive))',
-          foreground: 'hsl(var(--destructive-foreground))',
-        },
-        muted: {
-          DEFAULT: 'hsl(var(--muted))',
-          foreground: 'hsl(var(--muted-foreground))',
-        },
-        accent: {
-          DEFAULT: 'hsl(var(--accent))',
-          foreground: 'hsl(var(--accent-foreground))',
-        },
-        popover: {
-          DEFAULT: 'hsl(var(--popover))',
-          foreground: 'hsl(var(--popover-foreground))',
-        },
-        card: {
-          DEFAULT: 'hsl(var(--card))',
-          foreground: 'hsl(var(--card-foreground))',
-        },
-      },
-      borderRadius: {
-        xl: 'calc(var(--radius) + 4px)',
-        lg: 'var(--radius)',
-        md: 'calc(var(--radius) - 2px)',
-        sm: 'calc(var(--radius) - 4px)',
-      },
-      keyframes: {
-        'accordion-down': {
-          from: { height: 0 },
-          to: { height: 'var(--radix-accordion-content-height)' },
-        },
-        'accordion-up': {
-          from: { height: 'var(--radix-accordion-content-height)' },
-          to: { height: 0 },
-        },
-        'collapsible-down': {
-          from: { height: 0 },
-          to: { height: 'var(--radix-collapsible-content-height)' },
-        },
-        'collapsible-up': {
-          from: { height: 'var(--radix-collapsible-content-height)' },
-          to: { height: 0 },
-        },
-      },
-      animation: {
-        'accordion-down': 'accordion-down 0.2s ease-out',
-        'accordion-up': 'accordion-up 0.2s ease-out',
-        'collapsible-down': 'collapsible-down 0.2s ease-in-out',
-        'collapsible-up': 'collapsible-up 0.2s ease-in-out',
-      },
-    },
-  },
-  plugins: [animate, require('@tailwindcss/typography')],
-};
-```
+> **Order matters**: the theme file is listed before `tailwind.css` so its variables exist when `@theme inline` reads them.
 
 ### `slices/setup/theme/assets/css/tailwind.css`
 
 ```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+@import "tw-animate-css";
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --success: 120 60% 35%;
-    --success-foreground: 120 40% 98%;
-    --warning: 40 90% 50%;
-    --warning-foreground: 40 60% 98%;
-    --info: 200 85% 50%;
-    --info-foreground: 200 40% 98%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
+@custom-variant dark (&:is(.dark *));
 
-  /* .dark theme follows same pattern with inverted values */
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-serif: var(--font-serif);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
 }
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-border outline-ring/50;
   }
   body {
-    @apply bg-background text-foreground font-manrope;
+    @apply bg-background text-foreground;
   }
 }
 ```
 
+Every `--color-*` entry becomes a utility family (`bg-primary`, `text-muted-foreground`, `border-border`). Adding a token = one variable in each theme file + one line here.
+
+### `slices/setup/theme/assets/themes/default.css`
+
+```css
+:root {
+  --radius: 0.625rem;
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.646 0.222 41.116);
+  --chart-2: oklch(0.6 0.118 184.704);
+  --chart-3: oklch(0.398 0.07 227.392);
+  --chart-4: oklch(0.828 0.189 84.429);
+  --chart-5: oklch(0.769 0.188 70.08);
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.269 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  /* chart-* and sidebar-* get their dark values the same way */
+}
+```
+
+Switch themes by changing `tailwind.theme` in `components.json`. Add one by dropping a file into `assets/themes/`. Generate a palette at https://www.shadcn-vue.com/themes or https://tweakcn.com and paste the variables.
+
 ### `slices/setup/theme/utils/cn.ts`
 
 ```typescript
-import { type ClassValue, clsx } from 'clsx';
+import type { ClassValue } from 'clsx';
+import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs: ClassValue[]) {
@@ -333,74 +314,52 @@ export function cn(...inputs: ClassValue[]) {
 }
 ```
 
-### `slices/setup/theme/plugins/fonts.ts`
-
-```typescript
-export default defineNuxtPlugin(async (nuxtApp) => {
-  const webFontLoader = await import('webfontloader');
-
-  webFontLoader.load({
-    google: {
-      families: ['Manrope:100,300,400,500,700,900&display=swap'],
-    },
-  });
-});
-```
-
-### `slices/setup/theme/components.json`
+### `components.json` (app root)
 
 ```json
 {
   "$schema": "https://shadcn-vue.com/schema.json",
-  "style": "default",
+  "style": "new-york",
   "typescript": true,
   "tailwind": {
-    "config": "tailwind.config.js",
+    "config": "",
     "css": "slices/setup/theme/assets/css/tailwind.css",
-    "baseColor": "slate",
-    "cssVariables": true
+    "baseColor": "neutral",
+    "cssVariables": true,
+    "prefix": "",
+    "theme": "cleanslice"
   },
-  "framework": "nuxt",
+  "iconLibrary": "lucide",
   "aliases": {
-    "components": "~/slices/setup/theme/components",
-    "utils": "~/slices/setup/theme/utils/cn"
+    "components": "#theme/components",
+    "utils": "#theme/utils",
+    "ui": "#theme/components/ui",
+    "lib": "#theme/utils",
+    "composables": "#theme/composables"
   }
 }
 ```
 
----
+`tailwind.config` is empty on purpose (v4 has no config file). `tailwind.theme` is CleanSlice's addition, read by the theme slice's `nuxt.config.ts`.
 
-## App Configuration
+### Root `nuxt.config.ts` (color mode)
 
-### Update Root `app.vue`
-
-```vue
-<template>
-  <NuxtLayout>
-    <NuxtPage />
-  </NuxtLayout>
-</template>
+```typescript
+export default defineNuxtConfig({
+  modules: ['@nuxtjs/color-mode'],
+  colorMode: {
+    classSuffix: '',       // class is exactly "dark", matching @custom-variant
+    preference: 'system',
+    fallback: 'system',
+  },
+});
 ```
 
 ---
 
 ## Adding shadcn-vue Components
 
-### Prerequisites
-
-Before adding components, ensure the `components.json` file is in your app root:
-
-```bash
-# Copy from theme slice to app root (required for CLI to work)
-cp slices/setup/theme/components.json ./components.json
-```
-
-### Installing Components with bunx
-
-**Always use `bunx shadcn-vue@latest add`** to install components. This ensures:
-- Components are placed in the correct directory (`slices/setup/theme/components/ui/`)
-- Dependencies are automatically installed
-- TypeScript types are properly configured
+With `components.json` at the app root, the CLI installs straight into `slices/setup/theme/components/ui/`:
 
 ```bash
 cd app
@@ -409,13 +368,15 @@ cd app
 bunx shadcn-vue@latest add button
 
 # Install multiple components at once
-bunx shadcn-vue@latest add card input textarea
+bunx shadcn-vue@latest add card input textarea dialog sonner
 ```
+
+**Check the catalog first.** A component that exists in shadcn-vue is installed, never hand-written. A custom component goes into `components/ui/` only when the catalog has no equivalent, and it is built from the same primitives (`reka-ui`, `cva`, `cn`).
 
 ### Common Components
 
 ```bash
-bunx shadcn-vue@latest add card separator scroll-area input textarea select checkbox switch form dropdown-menu navigation-menu tabs breadcrumb alert alert-dialog toast sonner dialog sheet popover tooltip table avatar badge
+bunx shadcn-vue@latest add card separator scroll-area input textarea select checkbox switch form dropdown-menu navigation-menu tabs breadcrumb alert alert-dialog sonner dialog sheet drawer popover tooltip table avatar badge
 ```
 
 Full list: https://www.shadcn-vue.com/docs/components
@@ -425,8 +386,6 @@ Full list: https://www.shadcn-vue.com/docs/components
 ## Usage Examples
 
 ### Using UI Components (Auto-Imported)
-
-Thanks to `shadcn-nuxt`, all UI components are **auto-imported** and can be used directly in templates:
 
 ```vue
 <template>
@@ -440,6 +399,43 @@ Thanks to `shadcn-nuxt`, all UI components are **auto-imported** and can be used
     </CardContent>
   </Card>
 </template>
+```
+
+`class="mt-4"` is layout relative to the parent and belongs to the caller. What the button looks like is a `variant`/`size` and belongs to the theme.
+
+### Variants with cva
+
+```typescript
+// slices/setup/theme/components/ui/button/index.ts
+import type { VariantProps } from 'class-variance-authority';
+import { cva } from 'class-variance-authority';
+
+export { default as Button } from './Button.vue';
+
+export const buttonVariants = cva(
+  'inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50',
+  {
+    variants: {
+      variant: {
+        default: 'bg-primary text-primary-foreground hover:bg-primary/90',
+        destructive: 'bg-destructive text-destructive-foreground hover:bg-destructive/90',
+        outline: 'border border-input bg-background hover:bg-accent hover:text-accent-foreground',
+        secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
+        ghost: 'hover:bg-accent hover:text-accent-foreground',
+        link: 'text-primary underline-offset-4 hover:underline',
+      },
+      size: {
+        default: 'h-10 px-4 py-2',
+        sm: 'h-9 rounded-md px-3',
+        lg: 'h-11 rounded-md px-8',
+        icon: 'h-10 w-10',
+      },
+    },
+    defaultVariants: { variant: 'default', size: 'default' },
+  },
+);
+
+export type ButtonVariants = VariantProps<typeof buttonVariants>;
 ```
 
 ### Using Icons
@@ -462,56 +458,46 @@ import { User, Settings, LogOut } from 'lucide-vue-next';
 
 ## Color Token Reference
 
-| Token | Usage | Sidebar Variant |
-| --- | --- | --- |
-| `background` | Page background | `sidebar-background` |
-| `foreground` | Default text | `sidebar-foreground` |
-| `primary` | Primary actions, links | `sidebar-primary` |
-| `primary-foreground` | Text on primary | `sidebar-primary-foreground` |
-| `secondary` | Secondary actions | -- |
-| `secondary-foreground` | Text on secondary | -- |
-| `muted` | Muted backgrounds | -- |
-| `muted-foreground` | Muted text | -- |
-| `accent` | Accents, highlights | `sidebar-accent` |
-| `accent-foreground` | Text on accent | `sidebar-accent-foreground` |
-| `destructive` | Errors, delete actions | -- |
-| `destructive-foreground` | Text on destructive | -- |
-| `success` | Success states | -- |
-| `warning` | Warning states | -- |
-| `info` | Informational states | -- |
-| `card` | Card backgrounds | -- |
-| `popover` | Popover/dropdown backgrounds | -- |
-| `border` | Border colors | `sidebar-border` |
-| `input` | Input borders | -- |
-| `ring` | Focus rings | `sidebar-ring` |
+| Token | Usage |
+| --- | --- |
+| `background` / `foreground` | Page background, default text |
+| `card` / `card-foreground` | Card surfaces |
+| `popover` / `popover-foreground` | Popovers, dropdowns |
+| `primary` / `primary-foreground` | Primary actions, links |
+| `secondary` / `secondary-foreground` | Secondary actions |
+| `muted` / `muted-foreground` | Muted surfaces and text |
+| `accent` / `accent-foreground` | Hover and highlight surfaces |
+| `destructive` / `destructive-foreground` | Errors, delete actions |
+| `border`, `input`, `ring` | Borders, input borders, focus rings |
+| `chart-1` … `chart-5` | Data visualization series |
+| `sidebar-*` | Sidebar surfaces (`sidebar`, `-foreground`, `-primary`, `-accent`, `-border`, `-ring`) |
+
+Need `success` / `warning`? Add `--success` to each theme file and `--color-success: var(--success)` to `@theme inline`. Never write a raw color in a component.
 
 ---
 
 ## Dark Mode
 
-Dark mode uses the `.dark` class on `<html>`. Tailwind is configured with `darkMode: ['class']`.
+Dark mode is the `.dark` class on `<html>`. `tailwind.css` declares `@custom-variant dark (&:is(.dark *))`, so every `dark:` utility and every `.dark { ... }` token block follows that class. The class is owned by `@nuxtjs/color-mode` (root module, `classSuffix: ''`); there is no hand-written dark-mode composable.
 
-```typescript
-// composables/useDarkMode.ts
-export function useDarkMode() {
-  const isDark = ref(false);
+```vue
+<script setup lang="ts">
+import { Sun, Moon } from 'lucide-vue-next';
 
-  // Restore from localStorage or system preference on init
-  onMounted(() => {
-    const stored = localStorage.getItem('darkMode');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    isDark.value = stored === 'true' || (stored === null && prefersDark);
-    document.documentElement.classList.toggle('dark', isDark.value);
-  });
+const colorMode = useColorMode();
+const isDark = computed(() => colorMode.value === 'dark');
 
-  const toggle = () => {
-    isDark.value = !isDark.value;
-    document.documentElement.classList.toggle('dark', isDark.value);
-    localStorage.setItem('darkMode', String(isDark.value));
-  };
-
-  return { isDark, toggle };
+function toggle() {
+  colorMode.preference = isDark.value ? 'light' : 'dark';
 }
+</script>
+
+<template>
+  <Button variant="ghost" size="icon" @click="toggle">
+    <Sun v-if="isDark" class="h-5 w-5" />
+    <Moon v-else class="h-5 w-5" />
+  </Button>
+</template>
 ```
 
 ---
@@ -520,27 +506,30 @@ export function useDarkMode() {
 
 ### Initial Setup
 
-- [ ] Install all dependencies
+- [ ] Install dependencies (Tailwind v4, `@tailwindcss/vite`, `tw-animate-css`, `shadcn-nuxt`, `reka-ui`, `cva`, `clsx`, `tailwind-merge`, `lucide-vue-next`, `@nuxtjs/color-mode`)
 - [ ] Create slice folder structure
-- [ ] Configure `nuxt.config.ts` with alias
-- [ ] Create `tailwind.config.js`
-- [ ] Create `tailwind.css` with CSS variables
+- [ ] `components.json` at the app root with `tailwind.theme` set
+- [ ] Configure `nuxt.config.ts` with `#theme` alias, `tailwindcss()` Vite plugin, theme CSS before `tailwind.css`
+- [ ] Create `tailwind.css` with `@theme inline` token wiring
+- [ ] Create at least one theme file under `assets/themes/`
 - [ ] Create `cn.ts` utility
-- [ ] Create fonts plugin
-- [ ] Copy `components.json` to root
+- [ ] Register `@nuxtjs/color-mode` in the root config with `classSuffix: ''`
 
 ### For Each Component Added
 
+- [ ] Check the shadcn-vue catalog first
 - [ ] Run `bunx shadcn-vue@latest add [component]`
 - [ ] Component placed in `slices/setup/theme/components/ui/`
-- [ ] Export from component index if needed
+- [ ] Variants exported from the folder's `index.ts`
 
 ### Never Do
 
 - [ ] NO UI components outside theme slice
-- [ ] NO hardcoded colors (use CSS variables)
+- [ ] NO hardcoded colors (use tokens; add a token if one is missing)
+- [ ] NO `tailwind.config.js` or `@nuxtjs/tailwindcss` (v4 is configured in CSS)
 - [ ] NO relative imports (use `#theme` alias)
 - [ ] NO inline styles for theming
+- [ ] NO restyling a theme component with `class=`; add a variant instead
 
 ---
 

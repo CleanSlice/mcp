@@ -57,6 +57,7 @@ production_ready: true
 | Database access | **Gateway** | `UserGateway` uses `PrismaService` |
 | GitHub API | **Repository** | `GitHubRepository` wraps `@octokit/rest` |
 | AWS S3 | **Repository** | `S3Repository` wraps `@aws-sdk/s3` |
+| Email (SMTP) | **Repository** | `SmtpRepository` wraps `nodemailer` |
 
 ---
 
@@ -344,6 +345,9 @@ export class UserGateway implements IUserGateway {
       options.skip = (filter.page - 1) * filter.perPage;
       options.take = filter.perPage;
     }
+    // Every ordering ends on the primary key. With LIMIT/OFFSET, rows that tie on
+    // createdAt have no stable position and show up twice or never across pages.
+    options.orderBy = [{ createdAt: 'desc' }, { id: 'desc' }];
 
     const [results, total] = await Promise.all([
       this.prisma.user.findMany(options),
@@ -365,7 +369,13 @@ export class UserGateway implements IUserGateway {
   }
 
   async createUser(data: ICreateUserData): Promise<IUserData> {
-    const result = await this.prisma.user.create({ data: this.map.toCreate(data) });
+    // Mint the primary key inside the write; retry only an `id` collision.
+    // Format and rules: 02-standards/id-standards.md
+    const result = await withIdRetry(() =>
+      this.prisma.user.create({
+        data: { id: formatId(USER_ID_PREFIX), ...this.map.toCreate(data) },
+      }),
+    );
     return this.map.toData(result);
   }
 

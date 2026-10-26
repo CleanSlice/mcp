@@ -12,7 +12,9 @@ api/
 │   │   │   ├── prisma/
 │   │   │   ├── error/
 │   │   │   ├── swagger/
-│   │   │   └── health/
+│   │   │   ├── health/
+│   │   │   ├── id/
+│   │   │   └── mail/
 │   │   ├── user/
 │   │   ├── team/
 │   │   └── file/
@@ -54,6 +56,8 @@ import { ConfigModule } from '@nestjs/config';
 // Setup slices
 import { PrismaModule } from './slices/setup/prisma/prisma.module';
 import { HealthModule } from './slices/setup/health/health.module';
+import { IdModule } from './slices/setup/id';
+import { MailModule } from './slices/setup/mail';
 
 // Feature slices
 import { UserModule } from './slices/user/user.module';
@@ -71,6 +75,8 @@ import { FileModule } from './slices/file/file.module';
     // Setup slices (order matters for dependencies)
     PrismaModule,
     HealthModule,
+    IdModule,
+    MailModule,
 
     // Feature slices
     UserModule,
@@ -115,7 +121,7 @@ async function bootstrap() {
   app.useGlobalPipes(
     new ValidationPipe({
       transform: true,        // Auto-transform payloads to DTO instances
-      whitelist: true,        // Strip properties not in DTO
+      whitelist: true,        // Strip properties not in DTO — SILENTLY, see note below
       forbidNonWhitelisted: false,
     }),
   );
@@ -154,6 +160,8 @@ async function bootstrap() {
 
 bootstrap();
 ```
+
+> **`whitelist: true` strips silently.** A property not declared on the DTO is removed before the controller sees it, with no error (`forbidNonWhitelisted` is off). The symptom is a field that "never saves": the form sends it, the API answers 200, the row is unchanged. When a body field or query parameter stops working, check the DTO declaration first. What a query parameter accepts is proven by a test on the DTO through `ValidationPipe`, not on the gateway.
 
 ### Interceptor Order
 
@@ -267,7 +275,7 @@ datasource db {
 
 ```prisma
 model User {
-  id        String   @id @default(uuid())
+  id        String   @id            // minted by the gateway: formatId(USER_ID_PREFIX), never @default
   email     String   @unique
   name      String?
   teamId    String?
@@ -322,6 +330,21 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+
+  # Mailpit - catches every email the API sends; inbox at http://localhost:8025
+  mail-local:
+    image: axllent/mailpit:v1.31.4
+    container_name: cleanslice-mail
+    ports:
+      - '127.0.0.1:1025:1025' # SMTP
+      - '127.0.0.1:8025:8025' # Web UI
+    environment:
+      MP_MAX_MESSAGES: '500'
+    healthcheck:
+      test: ['CMD', '/mailpit', 'readyz']
+      interval: 2s
+      timeout: 3s
+      retries: 30
 
   # Local S3-compatible storage
   s3-local:
@@ -420,13 +443,14 @@ COGNITO_CLIENT_ID=
 COGNITO_REGION=us-east-1
 
 # ============================================
-# EMAIL (SMTP)
+# EMAIL (SMTP) - locally Mailpit from docker-compose, inbox at http://localhost:8025
 # ============================================
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
+SMTP_HOST=localhost
+SMTP_PORT=1025
+SMTP_SECURE=false
 SMTP_USER=
 SMTP_PASSWORD=
-SMTP_FROM=noreply@example.com
+SMTP_FROM=CleanSlice <noreply@cleanslice.local>
 
 # ============================================
 # EXTERNAL APIS
@@ -570,5 +594,7 @@ open http://localhost:3000/api
 
 - [Setup App (Nuxt)](./setup-app.md) - Frontend setup
 - [Repository Pattern](../03-patterns/repository.md) - Repository pattern with Prisma
+- [Mail Setup (API)](../01-setup/api-mail.md) - Sending email; Mailpit as the local inbox
+- [ID Setup (API)](../01-setup/api-id.md) - The one primary ID format and the slice that mints it
 - [Error Pattern](../03-patterns/error.md) - Error handling setup
 - [Controller Pattern](../03-patterns/controller.md) - API endpoints

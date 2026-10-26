@@ -15,6 +15,8 @@ CleanSlice uses vertical slices with Presentation → Domain ← Data. Use SINGU
 
 Domain services hold business policy and depend on abstract gateway contracts. Data gateways implement those contracts and map persistence output into domain types. Do not import Prisma or concrete data gateways into domain. Prisma already supplies the database repository; repositories are permitted for self-contained external adapters or homogeneous capabilities, with their own types and no domain imports. Cross-slice imports follow the project's declared dependency groups and public contracts.
 
+Every primary key is `<prefix>-<adjective>-<noun>-<12 Crockford>`: `id String @id` with no Prisma default, minted in the gateway by `formatId(prefix)` inside `withIdRetry`, validated at the boundary with `@IsEntityId(prefix)` or `EntityIdPipe`; never `uuid()`, `cuid()` or `randomUUID()`. See [Identifier Standards](../02-standards/id-standards.md).
+
 Use Pinia stores for state and Provider.vue as component entry. Implement API before App. Use the target database engine for migration/concurrency tests, not an automatic SQLite substitute.
 
 ## When to Use
@@ -25,6 +27,7 @@ Read these rules before planning or changing a slice. Search and read the task-r
 
 - Identify the invariant, owning slice and permitted dependency direction.
 - Validate input in DTOs and keep domain independent of persistence types.
+- Mint ids with `formatId(prefix)` in the gateway; validate incoming ids by prefix.
 - Define the real transaction boundary for multi-record writes.
 - Use durable intent, idempotency and reconciliation for external effects.
 - Check authorization context at HTTP and asynchronous boundaries.
@@ -39,5 +42,6 @@ Read these rules before planning or changing a slice. Search and read the task-r
 - [Authorization context](../architecture/authorization-context.md)
 - [Migrations and evidence](../architecture/migrations-and-evidence.md)
 - [Gateway](../03-patterns/gateway.md) and [Repository](../03-patterns/repository.md)
+- [Identifier Standards](../02-standards/id-standards.md)
 
 These are general patterns, not a requirement to adopt any product's organization names, actor-link schema, billing provider or timeout values.

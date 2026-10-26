@@ -38,6 +38,49 @@ psql -h localhost -U postgres -d cleanslice-api-local-database
 
 ---
 
+### Mailpit (SMTP inbox)
+
+Catches every email the API sends through the [mail slice](./api-mail.md) and
+shows it in a web inbox. Nothing leaves the machine: no real mailbox, no
+provider account, no accidental emails to customers from a dev database.
+
+| Setting | Value |
+|---------|-------|
+| SMTP port | `1025` (`SMTP_HOST=localhost`, `SMTP_PORT=1025`) |
+| Web UI | `http://localhost:8025` |
+| REST API | `http://localhost:8025/api/v1/messages` |
+| Retention | last 500 messages (`MP_MAX_MESSAGES`) |
+
+```yaml
+mail-local:
+  image: axllent/mailpit:v1.31.4
+  ports:
+    - '127.0.0.1:1025:1025' # SMTP
+    - '127.0.0.1:8025:8025' # Web UI
+  environment:
+    MP_MAX_MESSAGES: '500'
+  healthcheck:
+    test: ['CMD', '/mailpit', 'readyz']
+    interval: 2s
+    timeout: 3s
+    retries: 30
+```
+
+Bind to `127.0.0.1`: Mailpit has no authentication, so it must not listen on
+every interface of a laptop on a shared network.
+
+Reading the inbox from a test or a script:
+
+```bash
+# Newest messages, JSON
+curl -s http://localhost:8025/api/v1/messages | jq '.messages[] | {From, To, Subject}'
+
+# Empty the inbox
+curl -s -X DELETE http://localhost:8025/api/v1/messages
+```
+
+---
+
 ### S3 (LocalStack)
 
 Local S3-compatible storage for file uploads.
@@ -195,3 +238,10 @@ docker-compose down -v
 # Remove local data
 rm -rf docker/postgresql docker/s3
 ```
+
+---
+
+## Related Documentation
+
+- [Mail Setup (API)](./api-mail.md) - The slice that sends through Mailpit locally
+- [Prisma Setup (API)](./api-prisma.md) - PostgreSQL container and migrations

@@ -57,6 +57,7 @@ production_ready: true
 ║   - S3Repository - wraps AWS S3 SDK                             ║
 ║   - StripeRepository - wraps Stripe SDK                         ║
 ║   - OpenAIRepository - wraps OpenAI API                         ║
+║   - SmtpRepository - wraps nodemailer (Mailpit locally)         ║
 ║                                                                 ║
 ╚═════════════════════════════════════════════════════════════════╝
 ```
@@ -66,6 +67,7 @@ production_ready: true
 | Database access | **Gateway** | Prisma IS the repository |
 | External API (GitHub, Stripe) | **Repository** | Wraps external SDK |
 | File system access | **Repository** | Self-contained module |
+| Email (SMTP, Mailpit locally) | **Repository** | Wraps nodemailer; see [Mail Setup](../01-setup/api-mail.md) |
 
 ---
 
